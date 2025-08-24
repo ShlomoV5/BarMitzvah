@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bar Mitzvah Teaching App</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Font for the Pasuk - classic serif style -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Confetti library for a fun celebration at the end -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+    <style>
+      body {
+        font-family: "Heebo", sans-serif;
+        text-align: center;
+        margin: 0;
+        padding: 20px;
+        background: linear-gradient(to right, #e0eafc, #cfdef3);
+        color: #333;
+      }
+      .container {
+        background-color: white;
+        max-width: 600px;
+        margin: 20px auto;
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      }
+      .pasuk {
+        font-family: "Frank Ruhl Libre", serif;
+        font-size: 28px;
+        font-weight: 500;
+        margin: 20px 0;
+        direction: rtl;
+        line-height: 1.6;
+        color: #2c3e50; /* Darker color for better readability */
+      }
+      .progress-container {
+        display: flex;
+        gap: 4px;
+        margin-bottom: 25px;
+      }
+      .progress-cube {
+        flex: 1;
+        height: 12px;
+        background-color: #e9ecef;
+        border-radius: 4px;
+        transition: background-color 0.5s ease;
+      }
+      .progress-cube.completed {
+        background: linear-gradient(
+          to right,
+          #28a745,
+          #81c784
+        ); /* Green gradient */
+      }
+      .buttons {
+        margin: 20px 0;
+      }
+      button {
+        font-family: "Heebo", sans-serif;
+        font-size: 18px;
+        padding: 10px 20px;
+        margin: 10px;
+        cursor: pointer;
+        border: none;
+        border-radius: 8px;
+        color: white;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+      button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+      }
+      #didWell {
+        background-color: #28a745; /* Green */
+      }
+      #needPractice {
+        background-color: #007bff; /* Blue */
+      }
+      .points {
+        font-size: 20px;
+        margin-top: 20px;
+        font-weight: bold;
+      }
+      .feedback {
+        margin-top: 15px;
+        font-size: 18px;
+        font-weight: bold;
+        min-height: 25px; /* Reserve space to avoid layout shifts */
+      }
+      .feedback.success {
+        color: #28a745;
+      }
+      .feedback.practice {
+        color: #007bff;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Bar Mitzvah Practice</h1>
+      <div id="progressBar" class="progress-container"></div>
+      <h2 id="pasukTitle"></h2>
+
+      <div class="pasuk" id="pasukText"></div>
+
+      <audio id="pasukAudio" controls>
+        <source id="audioSource" src="" type="audio/mpeg" />
+        Your browser does not support the audio element.
+      </audio>
+
+      <div class="buttons">
+        <!-- Renamed for clarity -->
+        <button id="didWell">I Did Well!</button>
+        <button id="needPractice">Needs More Practice</button>
+      </div>
+
+      <div id="feedback" class="feedback"></div>
+
+      <div class="points">Points: <span id="points">0</span></div>
+    </div>
+
+    <script>
+      (function () {
+        const pesukim = [
+          // Pasuk 1 (Bereshit 28:10)
+          {
+            title: "Bereshit 28:10",
+            text: "וַיֵּצֵ֥א יַעֲקֹ֖ב מִבְּאֵ֣ר שָׁ֑בַע וַיֵּ֖לֶךְ חָרָֽנָה",
+            audio: "ויצא1.mp3",
+          },
+          // Pasuk 2 (Bereshit 28:11) - Parts
+          {
+            title: "Bereshit 28:11 - Part 1",
+            text: "וַיִּפְגַּ֨ע בַּמָּק֜וֹם וַיָּ֤לֶן שָׁם֙ כִּי־בָ֣א הַשֶּׁ֔מֶשׁ",
+            audio: "ויצא2א.mp3",
+          },
+          {
+            title: "Bereshit 28:11 - Part 2",
+            text: "וַיִּקַּח֙ מֵאַבְנֵ֣י הַמָּק֔וֹם וַיָּ֖שֶׂם מְרַֽאֲשֹׁתָ֑יו",
+            audio: "ויצא2ב.mp3",
+          },
+          {
+            title: "Bereshit 28:11 - Part 3",
+            text: "וַיִּשְׁכַּ֖ב בַּמָּק֥וֹם הַהֽוּא׃",
+            audio: "ויצא2ג.mp3",
+          },
+          {
+            title: "Bereshit 28:11 - Full Pasuk",
+            text: "וַיִּפְגַּ֨ע בַּמָּק֜וֹם וַיָּ֤לֶן שָׁם֙ כִּי־בָ֣א הַשֶּׁ֔מֶשׁ וַיִּקַּח֙ מֵאַבְנֵ֣י הַמָּק֔וֹם וַיָּ֖שֶׂם מְרַֽאֲשֹׁתָ֑יו וַיִּשְׁכַּ֖ב בַּמָּק֥וֹם הַהֽוּא׃",
+            audio: "ויצא2.mp3",
+          },
+          // Pasuk 3 (Bereshit 28:12) - Parts
+          {
+            title: "Bereshit 28:12 - Part 1",
+            text: "וַֽיַּחֲלֹ֗ם וְהִנֵּ֤ה סֻלָּם֙ מֻצָּ֣ב אַ֔רְצָה וְרֹאשׁ֖וֹ מַגִּ֣יעַ הַשָּׁמָ֑יְמָה",
+            audio: "ויצא3א.mp3",
+          },
+          {
+            title: "Bereshit 28:12 - Part 2",
+            text: "וְהִנֵּה֙ מַלְאֲכֵ֣י אֱלֹהִ֔ים עֹלִ֥ים וְיֹרְדִ֖ים בּֽוֹ׃",
+            audio: "ויצא3ב.mp3",
+          },
+          {
+            title: "Bereshit 28:12 - Full Pasuk",
+            text: "וַֽיַּחֲלֹ֗ם וְהִנֵּ֤ה סֻלָּם֙ מֻצָּ֣ב אַ֔רְצָה וְרֹאשׁ֖וֹ מַגִּ֣יעַ הַשָּׁמָ֑יְמָה וְהִנֵּה֙ מַלְאֲכֵ֣י אֱלֹהִ֔ים עֹלִ֥ים וְיֹרְדִ֖ים בּֽוֹ׃",
+            audio: "ויצא3.mp3",
+          },
+        ];
+
+        let points = 0;
+        let currentPasukIndex = 0;
+
+        // Get references to DOM elements
+        const progressBarContainer = document.getElementById("progressBar");
+        const titleElement = document.getElementById("pasukTitle");
+        const pasukTextElement = document.getElementById("pasukText");
+        const audioElement = document.getElementById("pasukAudio");
+        const audioSourceElement = document.getElementById("audioSource");
+        const pointsSpan = document.getElementById("points");
+        const didWellButton = document.getElementById("didWell");
+        const needPracticeButton = document.getElementById("needPractice");
+        const feedbackDiv = document.getElementById("feedback");
+        const buttonsDiv = document.querySelector(".buttons");
+
+        function createProgressBar() {
+          pesukim.forEach(() => {
+            const cube = document.createElement("div");
+            cube.className = "progress-cube";
+            progressBarContainer.appendChild(cube);
+          });
+        }
+
+        function updateProgressBar(index) {
+          const cubes = progressBarContainer.children;
+          if (cubes[index]) {
+            cubes[index].classList.add("completed");
+          }
+        }
+
+        function renderPasuk(index) {
+          const pasukData = pesukim[index];
+          titleElement.textContent = pasukData.title;
+          pasukTextElement.textContent = pasukData.text;
+          audioSourceElement.src = pasukData.audio;
+          audioElement.load(); // Important: reload the audio element
+          showFeedback("", ""); // Clear previous feedback
+        }
+
+        function showFeedback(message, type) {
+          feedbackDiv.textContent = message;
+          feedbackDiv.className = `feedback ${type}`;
+        }
+
+        didWellButton.addEventListener("click", function () {
+          // First, mark the current step as completed on the progress bar
+          updateProgressBar(currentPasukIndex);
+
+          points += 10; // Add points for doing well
+          pointsSpan.textContent = points;
+          currentPasukIndex++;
+
+          if (currentPasukIndex < pesukim.length) {
+            showFeedback("Great job! Here is the next part.", "success");
+            renderPasuk(currentPasukIndex);
+          } else {
+            showFeedback(
+              "Congratulations! You've finished this section.",
+              "success"
+            );
+            buttonsDiv.style.display = "none"; // Hide buttons at the end
+            // Trigger confetti!
+            confetti({
+              particleCount: 200,
+              spread: 100,
+              origin: { y: 0.6 },
+            });
+          }
+        });
+
+        needPracticeButton.addEventListener("click", function () {
+          showFeedback("Keep practicing! You can do it!", "practice");
+        });
+
+        // Initial setup on page load
+        createProgressBar();
+        renderPasuk(currentPasukIndex);
+      })();
+    </script>
+  </body>
+</html>
