@@ -1,301 +1,19 @@
 (function () {
-  /**
-   * ENHANCEMENTS:
-   * 1) Splash screen: show until init completes (then unblur UI).
-   * 2) Partial progress contribution:
-   *    - Each pasuk (1..12) has a single block.
-   *    - Progress fraction for a pasuk is the MAX of:
-   *        a) full pasuk score / 3,
-   *        b) (sum of part-scores) / (3 * number_of_parts)
-   *    - Part-scores and full-score are 0..3 per step, derived from attempts.
+  /** Controller with on-demand aliyah loading + per-pasuk steps, floating controls,
+   *  and "last 3 did-well => green" rule for progress bar.
    */
 
+  // Splash handling
   const splashEl = document.getElementById("splash");
   const setLoaded = () => {
     document.documentElement.classList.remove("loading");
-    splashEl.classList.add("hidden");
-    // remove from DOM later to free events
-    setTimeout(() => splashEl.remove(), 300);
+    if (splashEl) {
+      splashEl.classList.add("hidden");
+      setTimeout(() => splashEl.remove(), 300);
+    }
   };
 
-  const pesukim = [
-    // Pasuk 1 (Bereshit 28:10)
-    {
-      title: "Bereshit 28:10",
-      text: "וַיֵּצֵ֥א יַעֲקֹ֖ב מִבְּאֵ֣ר שָׁ֑בַע וַיֵּ֖לֶךְ חָרָֽנָה",
-      audio: "ויצא1.mp3",
-      isFullPasuk: true,
-      pasukNumber: 1,
-    },
-    // Pasuk 2 (Bereshit 28:11) - Parts
-    {
-      title: "Bereshit 28:11 - Part 1",
-      text: "וַיִּפְגַּ֨ע בַּמָּק֜וֹם וַיָּ֤לֶן שָׁ֙ם֙ כִּי־בָ֣א הַשֶּׁ֔מֶשׁ",
-      audio: "ויצא2א.mp3",
-      isFullPasuk: false,
-      pasukNumber: 2,
-    },
-    {
-      title: "Bereshit 28:11 - Part 2",
-      text: "וַיִּקַּח֙ מֵאַבְנֵ֣י הַמָּק֔וֹם וַיָּ֖שֶׂם מְרַֽאֲשֹׁתָ֑יו",
-      audio: "ויצא2ב.mp3",
-      isFullPasuk: false,
-      pasukNumber: 2,
-    },
-    {
-      title: "Bereshit 28:11 - Part 3",
-      text: "וַיִּשְׁכַּ֖ב בַּמָּק֥וֹם הַהֽוּא׃",
-      audio: "ויצא2ג.mp3",
-      isFullPasuk: false,
-      pasukNumber: 2,
-    },
-    {
-      title: "Bereshit 28:11 - Full Pasuk",
-      text: "וַיִּפְגַּ֨ע בַּמָּק֜וֹם וַיָּ֤לֶן שָׁ֙ם֙ כִּי־בָ֣א הַשֶּׁ֔מֶשׁ וַיִּקַּח֙ מֵאַבְנֵ֣י הַמָּק֔וֹם וַיָּ֖שֶׂם מְרַֽאֲשֹׁתָ֑יו וַיִּשְׁכַּ֖ב בַּמָּק֥וֹם הַהֽוּא׃",
-      audio: "ויצא2.mp3",
-      isFullPasuk: true,
-      pasukNumber: 2,
-    },
-    // Pasuk 3 (Bereshit 28:12) - Parts
-    {
-      title: "Bereshit 28:12 - Part 1",
-      text: "וַֽיַּחֲלֹ֗ם וְהִנֵּ֤ה סֻלָּם֙ מֻצָּ֣ב אַ֔רְצָה וְרֹאשׁ֖וֹ מַגִּ֣יעַ הַשָּׁמָ֑יְמָה",
-      audio: "ויצא3א.mp3",
-      isFullPasuk: false,
-      pasukNumber: 3,
-    },
-    {
-      title: "Bereshit 28:12 - Part 2",
-      text: "וְהִנֵּה֙ מַלְאֲכֵ֣י אֱלֹהִ֔ים עֹלִ֥ים וְיֹרְדִ֖ים בּֽוֹ׃",
-      audio: "ויצא3ב.mp3",
-      isFullPasuk: false,
-      pasukNumber: 3,
-    },
-    {
-      title: "Bereshit 28:12 - Full Pasuk",
-      text: "וַֽיַּחֲלֹ֗ם וְהִנֵּ֤ה סֻלָּם֙ מֻצָּ֣ב אַ֔רְצָה וְרֹאשׁ֖וֹ מַגִּ֣יעַ הַשָּׁמָ֑יְמָה וְהִנֵּה֙ מַלְאֲכֵ֣י אֱלֹהִ֔ים עֹלִ֥ים וְיֹרְדִ֖ים בּֽוֹ׃",
-      audio: "ויצא3.mp3",
-      isFullPasuk: true,
-      pasukNumber: 3,
-    },
-    // Pasuk 4 (Bereshit 28:13) - Parts
-    {
-      title: "Bereshit 28:13 - Part 1",
-      text: "וְהִנֵּ֨ה יְהֹוָ֜ה נִצָּ֣ב עָלָיו֮ וַיֹּאמַר֒",
-      audio: "ויצא4א.mp3",
-      isFullPasuk: false,
-      pasukNumber: 4,
-    },
-    {
-      title: "Bereshit 28:13 - Part 2",
-      text: "אֲנִ֣י יְהֹוָ֗ה אֱלֹהֵי֙ אַבְרָהָ֣ם אָבִ֔יךָ וֵאלֹהֵ֖י יִצְחָ֑ק",
-      audio: "ויצא4ב.mp3",
-      isFullPasuk: false,
-      pasukNumber: 4,
-    },
-    {
-      title: "Bereshit 28:13 - Part 3",
-      text: "הָאָ֗רֶץ אֲשֶׁ֤ר אַתָּה֙ שֹׁכֵ֣ב עָלֶ֔יהָ לְךָ֥ אֶתְּנֶ֖נָּה וּלְזַרְעֶֽךָ׃",
-      audio: "ויצא4ג.mp3",
-      isFullPasuk: false,
-      pasukNumber: 4,
-    },
-    {
-      title: "Bereshit 28:13 - Full Pasuk",
-      text: "וְהִנֵּ֨ה יְהֹוָ֜ה נִצָּ֣ב עָלָיו֮ וַיֹּאמַר֒ אֲנִ֣י יְהֹוָ֗ה אֱלֹהֵי֙ אַבְרָהָ֣ם אָבִ֔יךָ וֵאלֹהֵ֖י יִצְחָ֑ק הָאָ֗רֶץ אֲשֶׁ֤ר אַתָּה֙ שֹׁכֵ֣ב עָלֶ֔יהָ לְךָ֥ אֶתְּנֶ֖נָּה וּלְזַרְעֶֽךָ׃",
-      audio: "ויצא4.mp3",
-      isFullPasuk: true,
-      pasukNumber: 4,
-    },
-    // Pasuk 5 (Bereshit 28:14) - Parts
-    {
-      title: "Bereshit 28:14 - Part 1",
-      text: "וְהָיָ֤ה זַרְעֲךָ֙ כַּעֲפַ֣ר הָאָ֔רֶץ וּפָרַצְתָּ֛ יָ֥מָּה וָקֵ֖דְמָה וְצָפֹ֣נָה וָנֶ֑גְבָּה",
-      audio: "ויצא5א.mp3",
-      isFullPasuk: false,
-      pasukNumber: 5,
-    },
-    {
-      title: "Bereshit 28:14 - Part 2",
-      text: "וְנִבְרְﬞכ֥וּ בְךָ֛ כׇּל־מִשְׁפְּחֹ֥ת הָאֲדָמָ֖ה וּבְזַרְעֶֽךָ׃",
-      audio: "ויצא5ב.mp3",
-      isFullPasuk: false,
-      pasukNumber: 5,
-    },
-    {
-      title: "Bereshit 28:14 - Full Pasuk",
-      text: "וְהָיָ֤ה זַרְעֲךָ֙ כַּעֲפַ֣ר הָאָ֔רֶץ וּפָרַצְתָּ֛ יָ֥מָּה וָקֵ֖דְמָה וְצָפֹ֣נָה וָנֶ֑גְבָּה וְנִבְרְﬞכ֥וּ בְךָ֛ כׇּל־מִשְׁפְּחֹ֥ת הָאֲדָמָ֖ה וּבְזַרְעֶֽךָ׃",
-      audio: "ויצא5.mp3",
-      isFullPasuk: true,
-      pasukNumber: 5,
-    },
-
-    // Pasuk 6 (Bereshit 28:15) - Parts
-    {
-      title: "Bereshit 28:15 - Part 1",
-      text: "וְהִנֵּ֨ה אָנֹכִ֜י עִמָּ֗ךְ",
-      audio: "ויצא6א.mp3",
-      isFullPasuk: false,
-      pasukNumber: 6,
-    },
-    {
-      title: "Bereshit 28:15 - Part 2",
-      text: "וּשְׁמַרְתִּ֙יךָ֙ בְּכֹ֣ל אֲשֶׁר־תֵּלֵ֔ךְ וַהֲשִׁ֣בֹתִ֔יךָ אֶל־הָאֲדָמָ֖ה הַזֹּ֑את",
-      audio: "ויצא6ב.mp3",
-      isFullPasuk: false,
-      pasukNumber: 6,
-    },
-    {
-      title: "Bereshit 28:15 - Part 3",
-      text: "כִּ֚י לֹ֣א אֶֽעֱזׇבְךָ֔ עַ֚ד אֲשֶׁ֣ר אִם־עָשִׂ֔יתִי אֵ֥ת אֲשֶׁר־דִּבַּ֖רְתִּי לָֽךְ׃",
-      audio: "ויצא6ג.mp3",
-      isFullPasuk: false,
-      pasukNumber: 6,
-    },
-    {
-      title: "Bereshit 28:15 - Full Pasuk",
-      text: "וְהִנֵּ֨ה אָנֹכִ֜י עִמָּ֗ךְ וּשְׁמַרְתִּ֙יךָ֙ בְּכֹ֣ל אֲשֶׁר־תֵּלֵ֔ךְ וַהֲשִׁ֣בֹתִ֔יךָ אֶל־הָאֲדָמָ֖ה הַזֹּ֑את כִּ֚י לֹ֣א אֶֽעֱזׇבְךָ֔ עַ֚ד אֲשֶׁ֣ר אִם־עָשִׂ֔יתִי אֵ֥ת אֲשֶׁר־דִּבַּ֖רְתִּי לָֽךְ׃",
-      audio: "ויצא6.mp3",
-      isFullPasuk: true,
-      pasukNumber: 6,
-    },
-
-    // Pasuk 7 (Bereshit 28:16) - Single
-    {
-      title: "Bereshit 28:16",
-      text: "וַיִּיקַ֣ץ יַעֲקֹב֮ מִשְּׁנָתוֹ֒ וַיֹּ֕אמֶר אָכֵן֙ יֵ֣שׁ יְהֹוָ֔ה בַּמָּק֖וֹם הַזֶּ֑ה וְאָנֹכִ֖י לֹ֥א יָדָֽעְתִּי׃",
-      audio: "ויצא7.mp3",
-      isFullPasuk: true,
-      pasukNumber: 7,
-    },
-
-    // Pasuk 8 (Bereshit 28:17) - Parts
-    {
-      title: "Bereshit 28:17 - Part 1",
-      text: "וַיִּירָא֙ וַיֹּאמַ֔ר מַה־נּוֹרָ֖א הַמָּק֣וֹם הַזֶּ֑ה",
-      audio: "ויצא8א.mp3",
-      isFullPasuk: false,
-      pasukNumber: 8,
-    },
-    {
-      title: "Bereshit 28:17 - Part 2",
-      text: "אֵ֣ין זֶ֗ה כִּ֚י אִם־בֵּ֣ית אֱלֹהִ֔ים וְזֶ֖ה שַׁ֥עַר הַשָּׁמָֽיִם׃",
-      audio: "ויצא8ב.mp3",
-      isFullPasuk: false,
-      pasukNumber: 8,
-    },
-    {
-      title: "Bereshit 28:17 - Full Pasuk",
-      text: "וַיִּירָא֙ וַיֹּאמַ֔ר מַה־נּוֹרָ֖א הַמָּק֣וֹם הַזֶּ֑ה אֵ֣ין זֶ֗ה כִּ֚י אִם־בֵּ֣ית אֱלֹהִ֔ים וְזֶ֖ה שַׁ֥עַר הַשָּׁמָֽיִם׃",
-      audio: "ויצא8.mp3",
-      isFullPasuk: true,
-      pasukNumber: 8,
-    },
-    // Pasuk 9 (Bereshit 28:18) - Parts
-    {
-      title: "Bereshit 28:18 - Part 1",
-      text: "וַיַּשְׁכֵּ֨ם יַעֲקֹ֜ב בַּבֹּ֗קֶר",
-      audio: "ויצא9א.mp3",
-      isFullPasuk: false,
-      pasukNumber: 9,
-    },
-    {
-      title: "Bereshit 28:18 - Part 2",
-      text: "וַיִּקַּ֤ח אֶת־הָאֶ֙בֶן֙ אֲשֶׁר־שָׂ֣ם מְרַֽאֲשֹׁתָ֔יו",
-      audio: "ויצא9ב.mp3",
-      isFullPasuk: false,
-      pasukNumber: 9,
-    },
-    {
-      title: "Bereshit 28:18 - Part 3",
-      text: "וַיָּ֥שֶׂם אֹתָ֖הּ מַצֵּבָ֑ה וַיִּצֹ֥ק שֶׁ֖מֶן עַל־רֹאשָֽׁהּ",
-      audio: "ויצא9ג.mp3",
-      isFullPasuk: false,
-      pasukNumber: 9,
-    },
-    {
-      title: "Bereshit 28:18 - Full Pasuk",
-      text: "וַיַּשְׁכֵּ֨ם יַעֲקֹ֜ב בַּבֹּ֗קֶר וַיִּקַּ֤ח אֶת־הָאֶ֙בֶן֙ אֲשֶׁר־שָׂ֣ם מְרַֽאֲשֹׁתָ֔יו וַיָּ֥שֶׂם אֹתָ֖הּ מַצֵּבָ֑ה וַיִּצֹ֥ק שֶׁ֖מֶן עַל־רֹאשָֽׁהּ",
-      audio: "ויצא9.mp3",
-      isFullPasuk: true,
-      pasukNumber: 9,
-    },
-
-    // Pasuk 10 (Bereshit 28:19) - Single
-    {
-      title: "Bereshit 28:19",
-      text: "וַיִּקְרָ֛א אֶת־שֵֽׁם־הַמָּק֥וֹם הַה֖וּא בֵּֽית־אֵ֑ל וְאוּלָ֛ם ל֥וּז שֵׁם־הָעִ֖יר לָרִאשֹׁנָֽה",
-      audio: "ויצא10.mp3",
-      isFullPasuk: true,
-      pasukNumber: 10,
-    },
-
-    // Pasuk 11 (Bereshit 28:20) - Parts
-    {
-      title: "Bereshit 28:20 - Part 1",
-      text: "וַיִּדַּ֥ר יַעֲקֹ֖ב נֶ֣דֶר לֵאמֹ֑ר אִם־יִהְיֶ֨ה אֱלֹהִ֜ים עִמָּדִ֗י",
-      audio: "ויצא11א.mp3",
-      isFullPasuk: false,
-      pasukNumber: 11,
-    },
-    {
-      title: "Bereshit 28:20 - Part 2",
-      text: "וּשְׁמָרַ֙נִי֙ בַּדֶּ֤רֶךְ הַזֶּה֙ אֲשֶׁ֣ר אָנֹכִ֣י הוֹלֵ֔ךְ",
-      audio: "ויצא11ב.mp3",
-      isFullPasuk: false,
-      pasukNumber: 11,
-    },
-    {
-      title: "Bereshit 28:20 - Part 3",
-      text: "וְנָֽתַן־לִ֥י לֶ֛חֶם לֶאֱכֹ֖ל וּבֶ֥גֶד לִלְבֹּֽשׁ׃",
-      audio: "ויצא11ג.mp3",
-      isFullPasuk: false,
-      pasukNumber: 11,
-    },
-    {
-      title: "Bereshit 28:20 - Full Pasuk",
-      text: "וַיִּדַּ֥ר יַעֲקֹ֖ב נֶ֣דֶר לֵאמֹ֑ר אִם־יִהְיֶ֨ה אֱלֹהִ֜ים עִמָּדִ֗י וּשְׁמָרַ֙נִי֙ בַּדֶּ֤רֶךְ הַזֶּה֙ אֲשֶׁ֣ר אָנֹכִ֣י הוֹלֵ֔ךְ וְנָֽתַן־לִ֥י לֶ֛חֶם לֶאֱכֹ֖ל וּבֶ֥גֶד לִלְבֹּֽשׁ׃",
-      audio: "ויצא11.mp3",
-      isFullPasuk: true,
-      pasukNumber: 11,
-    },
-
-    // Pasuk 12 (Bereshit 28:21) - Single
-    {
-      title: "Bereshit 28:21",
-      text: "וְשַׁבְתִּ֥י בְשָׁל֖וֹם אֶל־בֵּ֣ית אָבִ֑י וְהָיָ֧ה יְהֹוָ֛ה לִ֖י לֵאלֹהִֽים",
-      audio: "ויצא12.mp3",
-      isFullPasuk: true,
-      pasukNumber: 12,
-    },
-
-    // Pasuk 13 (Bereshit 28:22) - Parts
-    {
-      title: "Bereshit 28:22 - Part 1",
-      text: "וְהָאֶ֣בֶן הַזֹּ֗את אֲשֶׁר־שַׂ֙מְתִּי֙ מַצֵּבָ֔ה יִהְיֶ֖ה בֵּ֣ית אֱלֹהִ֑ים",
-      audio: "ויצא13א.mp3",
-      isFullPasuk: false,
-      pasukNumber: 13,
-    },
-    {
-      title: "Bereshit 28:22 - Part 2",
-      text: "וְכֹל֙ אֲשֶׁ֣ר תִּתֶּן־לִ֔י עַשֵּׂ֖ר אֲעַשְּׂרֶ֥נּוּ לָֽךְ׃",
-      audio: "ויצא13ב.mp3",
-      isFullPasuk: false,
-      pasukNumber: 13,
-    },
-    {
-      title: "Bereshit 28:22 - Full Pasuk",
-      text: "וְהָאֶ֣בֶן הַזֹּ֗את אֲשֶׁר־שַׂ֙מְתִּי֙ מַצֵּבָ֔ה יִהְיֶ֖ה בֵּ֣ית אֱלֹהִ֑ים וְכֹל֙ אֲשֶׁ֣ר תִּתֶּן־לִ֔י עַשֵּׂ֖ר אֲעַשְּׂרֶ֥נּוּ לָֽךְ׃",
-      audio: "ויצא13.mp3",
-      isFullPasuk: true,
-      pasukNumber: 13,
-    },
-  ];
-
-  const TOTAL_BLOCKS = 12;
-
-  // Cache DOM
+  // DOM
   const progressBarContainer = document.getElementById("progressBar");
   const titleElement = document.getElementById("pasukTitle");
   const pasukTextElement = document.getElementById("pasukText");
@@ -309,58 +27,118 @@
   const tryAgainStepBtn = document.getElementById("tryAgainStep");
   const endAliyahControls = document.getElementById("endAliyahControls");
   const tryAgainAliyahBtn = document.getElementById("tryAgainAliyah");
+  const leftMenu = document.querySelector(".left-menu");
 
   // State
+  let aliyahKey = null; // e.g., "rishon"
+  let pasukSets = []; // [{pasukNumber, steps:[...]}, ...]
+  let flatSteps = []; // flattened steps for simple navigation
+  let totalPesukim = 0;
   let currentIndex = 0;
-  let sessionAttemptsPerIndex = new Array(pesukim.length).fill(0); // step attempts (session)
-  let stepScores = new Array(pesukim.length).fill(0); // persistent per-step 0..3
-  let pasukScoresFull = new Array(TOTAL_BLOCKS).fill(0); // best full-pasuk score only
+
+  // Persistent stores (scoped by aliyahKey)
+  let sessionAttemptsPerIndex = []; // per-step attempts (session only)
+  let stepScores = []; // persistent per-step best (0..3)
+  let pasukScoresFull = []; // best full-pasuk per pasuk (0..3)
   let practiceData = {};
+  let recentPasukOutcomes = []; // per pasuk array of last outcomes (deque of booleans, length<=3)
   const todayKey = new Date().toISOString().split("T")[0];
 
-  // Parts map per pasuk
-  const pasukParts = Array.from({ length: TOTAL_BLOCKS }, () => []);
-  const fullIndexByPasuk = new Array(TOTAL_BLOCKS).fill(-1);
-  pesukim.forEach((s, idx) => {
-    if (s.pasukNumber >= 1 && s.pasukNumber <= TOTAL_BLOCKS) {
-      if (s.isFullPasuk) fullIndexByPasuk[s.pasukNumber - 1] = idx;
-      else pasukParts[s.pasukNumber - 1].push(idx);
-    }
-  });
+  // Helpers to get/set localStorage keys namespaced by aliyah
+  const keyPrefix = () => (aliyahKey ? `bm_${aliyahKey}_` : "bm_");
+  const LS = {
+    practice: () => `${keyPrefix()}practice`,
+    stepScores: () => `${keyPrefix()}step_scores`,
+    fullScores: () => `${keyPrefix()}full_scores`,
+    recent: () => `${keyPrefix()}recent_outcomes`,
+  };
 
-  /*** STORAGE ***/
+  /** ========== DATA LOADING ========== */
+  async function loadAliyah(key) {
+    aliyahKey = key; // e.g., "rishon"
+    if (key === "rishon") {
+      // Dynamic import to load only when "on it"
+      const mod = await import("./aliyah1.js");
+      pasukSets = mod.default;
+    } else {
+      // Future: different aliyot can be added similarly
+      pasukSets = [];
+    }
+
+    totalPesukim = pasukSets.length;
+
+    // Flatten steps
+    flatSteps = [];
+    pasukSets.forEach((p) => {
+      p.steps.forEach((s, idx) => {
+        flatSteps.push({
+          ...s,
+          pasukNumber: p.pasukNumber,
+          partIndex: idx,
+          partsCount: p.steps.length,
+        });
+      });
+    });
+
+    // Initialize stores based on flat length
+    sessionAttemptsPerIndex = new Array(flatSteps.length).fill(0);
+    stepScores = loadStepScores();
+    if (stepScores.length !== flatSteps.length)
+      stepScores = new Array(flatSteps.length).fill(0);
+
+    pasukScoresFull = loadFullPasukScores();
+    if (pasukScoresFull.length !== totalPesukim)
+      pasukScoresFull = new Array(totalPesukim).fill(0);
+
+    recentPasukOutcomes = loadRecentOutcomes();
+    if (recentPasukOutcomes.length !== totalPesukim)
+      recentPasukOutcomes = Array.from({ length: totalPesukim }, () => []);
+
+    practiceData = getPracticeData();
+
+    // UI
+    createProgressBar();
+    currentIndex = 0;
+    renderStep(currentIndex);
+    renderFloatingPracticeLog();
+    startActiveTimeTracker();
+    setLoaded();
+  }
+
+  /** ========== STORAGE ========== */
   function getPracticeData() {
-    const data = localStorage.getItem("barMitzvahPracticeData");
+    const data = localStorage.getItem(LS.practice());
     return data ? JSON.parse(data) : {};
   }
   function savePracticeData() {
-    localStorage.setItem(
-      "barMitzvahPracticeData",
-      JSON.stringify(practiceData)
-    );
+    localStorage.setItem(LS.practice(), JSON.stringify(practiceData));
   }
   function loadStepScores() {
-    const s = localStorage.getItem("barMitzvahStepScores");
-    return s ? JSON.parse(s) : new Array(pesukim.length).fill(0);
+    const s = localStorage.getItem(LS.stepScores());
+    return s ? JSON.parse(s) : [];
   }
   function saveStepScores() {
-    localStorage.setItem("barMitzvahStepScores", JSON.stringify(stepScores));
+    localStorage.setItem(LS.stepScores(), JSON.stringify(stepScores));
   }
   function loadFullPasukScores() {
-    const s = localStorage.getItem("barMitzvahPasukScoresFull");
-    return s ? JSON.parse(s) : new Array(TOTAL_BLOCKS).fill(0);
+    const s = localStorage.getItem(LS.fullScores());
+    return s ? JSON.parse(s) : [];
   }
   function saveFullPasukScores() {
-    localStorage.setItem(
-      "barMitzvahPasukScoresFull",
-      JSON.stringify(pasukScoresFull)
-    );
+    localStorage.setItem(LS.fullScores(), JSON.stringify(pasukScoresFull));
+  }
+  function loadRecentOutcomes() {
+    const s = localStorage.getItem(LS.recent());
+    return s ? JSON.parse(s) : [];
+  }
+  function saveRecentOutcomes() {
+    localStorage.setItem(LS.recent(), JSON.stringify(recentPasukOutcomes));
   }
 
-  /*** PROGRESS BAR ***/
+  /** ========== PROGRESS BAR ========== */
   function createProgressBar() {
     progressBarContainer.innerHTML = "";
-    for (let i = 0; i < TOTAL_BLOCKS; i++) {
+    for (let i = 0; i < totalPesukim; i++) {
       const blk = document.createElement("div");
       blk.className = "progress-block pb-gray";
       const fill = document.createElement("div");
@@ -371,28 +149,37 @@
     redrawProgressBar();
   }
 
-  /**
-   * Compute fraction per pasuk:
-   * fraction = max( fullScore/3 , sum(partScores)/(3 * partsCount) )
-   * Tier colors: 0..33% -> pb-1, 33..66% -> pb-2, 66..100% -> pb-3, 0 -> pb-gray
-   */
+  // Compute fraction using either best full score or average of parts (from stepScores)
   function computePasukFraction(pasukIdx) {
-    const fullIdx = fullIndexByPasuk[pasukIdx];
-    const parts = pasukParts[pasukIdx];
-
+    const pasukNumber = pasukIdx + 1;
+    const pasuk = pasukSets[pasukIdx];
     let fullFrac = 0;
-    if (fullIdx !== -1) {
-      const s = Math.max(pasukScoresFull[pasukIdx], stepScores[fullIdx] || 0);
-      fullFrac = s / 3;
-    }
-
     let partFrac = 0;
-    if (parts.length > 0) {
-      const sum = parts.reduce((acc, i) => acc + (stepScores[i] || 0), 0);
-      partFrac = sum / (3 * parts.length);
+
+    // best full score for pasuk
+    const fullScore = pasukScoresFull[pasukIdx] || 0;
+    fullFrac = fullScore / 3;
+
+    // parts average from stepScores
+    const stepIndices = getStepIndicesOfPasuk(pasukNumber);
+    if (stepIndices.length > 0) {
+      let sum = 0;
+      let count = 0;
+      stepIndices.forEach((si) => {
+        sum += stepScores[si] || 0;
+        count++;
+      });
+      partFrac = count ? sum / (3 * count) : 0;
     }
 
     return Math.max(fullFrac, partFrac);
+  }
+
+  function isPasukGreen(pasukIdx) {
+    // Green only if last 3 outcomes for this pasuk are true (i.e., 3 consecutive "did well")
+    const recent = recentPasukOutcomes[pasukIdx] || [];
+    if (recent.length < 3) return false;
+    return recent.slice(-3).every(Boolean);
   }
 
   function redrawProgressBar() {
@@ -402,20 +189,47 @@
       const fill = blk.querySelector(".fill");
       fill.style.width = `${Math.round(frac * 100)}%`;
 
-      blk.classList.remove("pb-gray", "pb-1", "pb-2", "pb-3");
+      // base class reset
+      blk.classList.remove("pb-gray", "pb-yellow", "pb-green", "current");
+      // color logic
       if (frac <= 0) {
         blk.classList.add("pb-gray");
-      } else if (frac < 1 / 3) {
-        blk.classList.add("pb-1");
-      } else if (frac < 2 / 3) {
-        blk.classList.add("pb-2");
       } else {
-        blk.classList.add("pb-3");
+        if (isPasukGreen(i)) blk.classList.add("pb-green");
+        else blk.classList.add("pb-yellow");
       }
     });
+
+    // Mark current pasuk + label chunk
+    const current = flatSteps[currentIndex];
+    if (!current) return;
+    const pasukBlock = blocks[current.pasukNumber - 1];
+    if (pasukBlock) {
+      pasukBlock.classList.add("current");
+
+      // Ensure only one label exists
+      blocks.forEach((b) => {
+        const lbl = b.querySelector(".current-label");
+        if (lbl) lbl.remove();
+      });
+
+      const label = document.createElement("div");
+      label.className = "current-label";
+      const partIdx = current.partIndex + 1;
+      label.textContent = `Now ${current.pasukNumber}:${partIdx}/${current.partsCount}`;
+      pasukBlock.appendChild(label);
+    }
   }
 
-  /*** PRACTICE LOG (FLOATING) ***/
+  function getStepIndicesOfPasuk(pasukNumber) {
+    const indices = [];
+    flatSteps.forEach((s, idx) => {
+      if (s.pasukNumber === pasukNumber) indices.push(idx);
+    });
+    return indices;
+  }
+
+  /** ========== PRACTICE LOG (FLOATING) ========== */
   function formatSeconds(totalSeconds) {
     if (!totalSeconds) return "0s";
     const minutes = Math.floor(totalSeconds / 60);
@@ -453,7 +267,7 @@
     });
 
     let startIdx = rows.findIndex((r) => r.points > 0 || r.secs > 0);
-    if (startIdx === -1) return; // keep only header
+    if (startIdx === -1) return;
 
     rows.slice(startIdx).forEach((r) => {
       const tr = document.createElement("tr");
@@ -484,18 +298,21 @@
       savePracticeData();
       saveStepScores();
       saveFullPasukScores();
+      saveRecentOutcomes();
     });
   }
 
-  /*** RENDER / FEEDBACK ***/
+  /** ========== RENDER / FEEDBACK ========== */
   function renderStep(index) {
-    const step = pesukim[index];
+    const step = flatSteps[index];
+    if (!step) return;
     titleElement.textContent = step.title;
     pasukTextElement.textContent = step.text;
     audioSourceElement.src = step.audio;
     audioElement.load();
     showFeedback("", "");
     endAliyahControls.hidden = true;
+    redrawProgressBar();
   }
 
   function showFeedback(msg, type) {
@@ -503,7 +320,7 @@
     feedbackDiv.className = `feedback ${type || ""}`;
   }
 
-  /*** SCORING ***/
+  /** ========== SCORING & OUTCOMES ========== */
   function pointsFromAttempts(attempts) {
     if (attempts === 1) return 3;
     if (attempts === 2) return 2;
@@ -522,12 +339,12 @@
     return p;
   }
 
-  // Update persistent step score (0..3). For full-pasuk, also track best full score per pasuk.
   function updateStepScore(stepIdx) {
     const attempts = sessionAttemptsPerIndex[stepIdx];
     const earned = pointsFromAttempts(attempts); // 3/2/1
     stepScores[stepIdx] = Math.max(stepScores[stepIdx], earned);
-    const step = pesukim[stepIdx];
+
+    const step = flatSteps[stepIdx];
     if (step.isFullPasuk) {
       const pIdx = step.pasukNumber - 1;
       pasukScoresFull[pIdx] = Math.max(pasukScoresFull[pIdx], earned);
@@ -536,17 +353,28 @@
     saveFullPasukScores();
   }
 
-  /*** BUTTONS ***/
+  function recordPasukOutcome(pasukIdx, didWell) {
+    const q = recentPasukOutcomes[pasukIdx] || [];
+    q.push(!!didWell);
+    // keep last 3 only
+    while (q.length > 3) q.shift();
+    recentPasukOutcomes[pasukIdx] = q;
+    saveRecentOutcomes();
+  }
+
+  /** ========== BUTTONS ========== */
   didWellButton.addEventListener("click", function () {
-    const step = pesukim[currentIndex];
+    const step = flatSteps[currentIndex];
+    const pasukIdx = step.pasukNumber - 1;
 
     updateDailyPoints(currentIndex);
     updateStepScore(currentIndex);
+    recordPasukOutcome(pasukIdx, true);
     redrawProgressBar();
 
     // Advance
     currentIndex++;
-    if (currentIndex < pesukim.length) {
+    if (currentIndex < flatSteps.length) {
       showFeedback("Great job! Moving on to the next part.", "success");
       renderStep(currentIndex);
     } else {
@@ -557,7 +385,13 @@
   });
 
   needPracticeButton.addEventListener("click", function () {
+    const step = flatSteps[currentIndex];
+    const pasukIdx = step.pasukNumber - 1;
+
     sessionAttemptsPerIndex[currentIndex]++;
+    recordPasukOutcome(pasukIdx, false);
+    redrawProgressBar();
+
     showFeedback(
       "Excellent! A bit more practice and it will be perfect.",
       "practice"
@@ -572,31 +406,39 @@
   });
 
   tryAgainAliyahBtn.addEventListener("click", function () {
-    sessionAttemptsPerIndex = new Array(pesukim.length).fill(0);
+    sessionAttemptsPerIndex = new Array(flatSteps.length).fill(0);
     currentIndex = 0;
     endAliyahControls.hidden = true;
-    renderStep(currentIndex);
     showFeedback("The Aliyah has restarted.", "");
+    renderStep(currentIndex);
   });
 
-  /*** INIT ***/
-  function initialize() {
-    practiceData = getPracticeData();
-    stepScores = loadStepScores();
-    pasukScoresFull = loadFullPasukScores();
+  /** ========== MENU HANDLING (Aliyah selection) ========== */
+  if (leftMenu) {
+    leftMenu.addEventListener("click", (e) => {
+      const btn = e.target.closest(".menu-btn[data-aliyah]");
+      if (!btn || btn.disabled) return;
+
+      document
+        .querySelectorAll(".menu-btn")
+        .forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+
+      const key = btn.getAttribute("data-aliyah"); // e.g., "rishon"
+      // Re-load data & reset state for the chosen aliyah
+      loadAliyah(key);
+    });
+  }
+
+  /** ========== INIT (default to rishon) ========== */
+  (async function initialize() {
+    // Load Rishon on start (matches your current UI)
+    await loadAliyah("rishon");
 
     const todayData = practiceData[todayKey] || { points: 0, activeSeconds: 0 };
     pointsSpan.textContent = todayData.points;
 
-    createProgressBar();
-    renderStep(currentIndex);
-    renderFloatingPracticeLog();
-    startActiveTimeTracker();
-
-    // Mark loaded
+    // Mark loaded if not already
     setLoaded();
-  }
-
-  // Start
-  initialize();
+  })();
 })();

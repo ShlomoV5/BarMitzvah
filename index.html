@@ -1,99 +1,101 @@
-  <!DOCTYPE html>
-  <html lang="en" class="loading">
-    <head>
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>Bar Mitzvah Practice</title>
+<!DOCTYPE html>
+<html lang="en" class="loading">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bar Mitzvah Practice</title>
 
-      <!-- Fonts -->
-      <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-      <link
-        href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700&display=swap"
-        rel="stylesheet"
-      />
-      <link
-        href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;500&display=swap"
-        rel="stylesheet"
-      />
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
 
-      <!-- Confetti -->
-      <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+    <!-- Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
 
-      <link rel="stylesheet" href="styles.css" />
-    </head>
-    <body>
-      <!-- Loading Splash -->
-      <div id="splash" aria-hidden="true">
-        <div class="splash-card">
-          <div class="spinner" aria-label="Loading...""></div>
-          <div class="splash-text">Loading content</div>
-        </div>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <!-- Loading Splash -->
+    <div id="splash" aria-hidden="true">
+      <div class="splash-card">
+        <div class="spinner" aria-label="Loading..."></div>
+        <div class="splash-text">Loading content</div>
+      </div>
+    </div>
+
+    <!-- Left menu -->
+    <aside class="left-menu">
+      <div class="menu-title">Aliyot Menu</div>
+      <button class="menu-btn active" data-aliyah="rishon">ראשון</button>
+      <button class="menu-btn" disabled>שני</button>
+      <button class="menu-btn" disabled>שלישי</button>
+      <button class="menu-btn" disabled>רביעי</button>
+      <button class="menu-btn" disabled>חמישי</button>
+      <button class="menu-btn" disabled>שישי</button>
+      <button class="menu-btn" disabled>שביעי</button>
+      <button class="menu-btn" disabled>הפטרה</button>
+    </aside>
+
+    <!-- Floating minimal practice log (right) -->
+    <aside class="practice-log-float" id="practiceLogFloat">
+      <table>
+        <thead>
+          <tr>
+            <th title="Date">📅</th>
+            <th title="Points">⭐</th>
+            <th title="Time">⏱️</th>
+          </tr>
+        </thead>
+        <tbody id="practiceLogBody"></tbody>
+      </table>
+    </aside>
+
+    <div class="container">
+      <!-- Progress pill -->
+      <div class="progress-pill">
+        <div id="progressBar" class="progress-cubes"></div>
       </div>
 
-      <!-- Left menu -->
-      <aside class="left-menu">
-        <div class="menu-title">Aliyot Menu</div>
-        <button class="menu-btn active" data-aliyah="rishon">ראשון</button>
-        <button class="menu-btn" disabled>שני</button>
-        <button class="menu-btn" disabled>שלישי</button>
-        <button class="menu-btn" disabled>רביעי</button>
-        <button class="menu-btn" disabled>חמישי</button>
-        <button class="menu-btn" disabled>שישי</button>
-        <button class="menu-btn" disabled>שביעי</button>
-        <button class="menu-btn" disabled>הפטרה</button>
-      </aside>
+      <h1>Bar Mitzvah Practice</h1>
+      <h2 id="pasukTitle"></h2>
 
-      <!-- Floating minimal practice log (right) -->
-      <aside class="practice-log-float" id="practiceLogFloat">
-        <table>
-          <thead>
-            <tr>
-              <th title="Date">📅</th>
-              <th title="Points">⭐</th>
-              <th title="Time">⏱️</th>
-            </tr>
-          </thead>
-          <tbody id="practiceLogBody"></tbody>
-        </table>
-      </aside>
+      <div class="pasuk" id="pasukText"></div>
 
-      <div class="container">
-        <!-- Progress pill -->
-        <div class="progress-pill">
-          <div id="progressBar" class="progress-cubes"></div>
-        </div>
+      <audio id="pasukAudio" controls>
+        <source id="audioSource" src="" type="audio/mpeg" />
+        Your browser does not support the audio element.
+      </audio>
 
-        <h1>Bar Mitzvah Practice</h1>
-        <h2 id="pasukTitle"></h2>
-
-        <div class="pasuk" id="pasukText"></div>
-
-        <audio id="pasukAudio" controls>
-          <source id="audioSource" src="" type="audio/mpeg" />
-          Your browser does not support the audio element.
-        </audio>
-
-        <div class="buttons">
-          <button id="didWell">I did well</button>
-          <button id="needPractice">Needs Practice</button>
-          <button id="tryAgainStep" class="try-again" title="Try Again">
-            ↻ Start Over
-          </button>
-        </div>
-
-        <div id="feedback" class="feedback"></div>
-
-        <div class="points">Points for today: <span id="points">0</span></div>
-
-        <div id="endAliyahControls" class="end-aliyah-controls" hidden>
-          <div class="end-msg">Aliyah finished!🎉</div>
-          <button id="tryAgainAliyah" class="try-again big">
-            ↻ Try Aliyah Over
-          </button>
-        </div>
+      <!-- Floating, anchored controls -->
+      <div class="buttons floating-controls">
+        <button id="didWell">I did well</button>
+        <button id="needPractice">Needs Practice</button>
+        <button id="tryAgainStep" class="try-again" title="Try Again">
+          ↻ Start Over
+        </button>
       </div>
 
-      <script src="script.js" defer></script>
-    </body>
-  </html>
+      <div id="feedback" class="feedback"></div>
+
+      <div class="points">Points for today: <span id="points">0</span></div>
+
+      <div id="endAliyahControls" class="end-aliyah-controls" hidden>
+        <div class="end-msg">Aliyah finished!🎉</div>
+        <button id="tryAgainAliyah" class="try-again big">
+          ↻ Try Aliyah Over
+        </button>
+      </div>
+    </div>
+
+    <!-- Main controller uses dynamic import for aliyot -->
+    <script type="module" src="script.js"></script>
+  </body>
+</html>
