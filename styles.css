@@ -303,34 +303,131 @@ button:hover {
   border-radius: 12px;
 }
 
-/* Feedback + points */
+/* Floating points at top (hovering, not covering content) */
 .points {
-  font-size: 18px;
-  margin-top: 10px;
-  font-weight: 700;
-  text-align: center;
-}
-.feedback {
-  margin-top: 10px;
-  font-size: 18px;
-  font-weight: 700;
-  min-height: 26px;
-  text-align: center;
-}
-.feedback.success {
-  color: var(--success);
-}
-.feedback.practice {
-  color: #2563eb;
+  position: fixed;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 12000;
+  background: linear-gradient(135deg, #fff, #f3f6ff);
+  border-radius: 999px;
+  padding: 8px 14px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+  font-size: 16px;
 }
 
-/* End-of-aliyah area */
-.end-aliyah-controls {
-  margin-top: 16px;
-  text-align: center;
+/* Left menu / right practice log handles and responsive behavior */
+.left-menu,
+.practice-log-float {
+  transition: width 0.22s ease, transform 0.22s ease;
+  z-index: 11000;
 }
-.end-aliyah-controls .end-msg {
-  font-weight: 700;
-  margin-bottom: 10px;
-  color: #0f766e;
+
+/* menu handle (vertical label) */
+.left-menu .menu-handle,
+.practice-log-float .log-handle {
+  display: none;
 }
+
+/* Mobile-specific layout: no page scroll, compact container, toggles */
+@media (max-width: 700px) {
+  html, body {
+    height: 100vh;
+    overflow: hidden; /* no page scrolling */
+  }
+
+  /* Make container fill available area between top points and bottom controls */
+  .container {
+    max-width: none;
+    margin: 56px 8px 10vh; /* top reserved space for .points, bottom reserved for controls */
+    padding: 14px;
+    height: calc(100vh - 10vh - 64px); /* 10vh bottom controls, 64px top points+gaps */
+    overflow: hidden;
+  }
+
+  h1 { font-size: 18px; margin: 8px 0; }
+  #pasukTitle { font-size: 16px; }
+  .pasuk { font-size: clamp(18px, 4.2vw, 28px); padding: 12px; margin: 10px 0; }
+
+  /* Left menu collapsed/expanded behavior */
+  .left-menu {
+    top: 8px;
+    left: 8px;
+    width: 44px;
+    padding: 6px;
+    border-radius: 12px;
+    overflow: visible;
+  }
+  .left-menu.expanded { width: 220px; padding: 10px; }
+  .left-menu .menu-body { display: none; }
+  .left-menu.expanded .menu-body { display: block; }
+  .left-menu .menu-handle { display: block; cursor: pointer; height: 100%; }
+  .left-menu .menu-title {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-weight: 700;
+    color: var(--accent);
+    font-size: 14px;
+    text-align: center;
+    padding: 6px 0;
+  }
+
+  /* Practice log collapsed/expanded */
+  .practice-log-float {
+    top: 8px;
+    right: 8px;
+    width: 44px;
+    padding: 6px;
+    border-radius: 12px;
+  }
+  .practice-log-float.expanded { width: 300px; padding: 10px; }
+  .practice-log-float .log-body { display: none; }
+  .practice-log-float.expanded .log-body { display: block; }
+  .practice-log-float .log-handle {
+    display: block;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-weight: 700;
+    cursor: pointer;
+    text-align: center;
+    font-size: 13px;
+    color: var(--accent-2);
+  }
+  .practice-log-float table { font-size: 12px; }
+
+  /* Floating controls: fixed bottom, 3 equal columns, round buttons */
+  .floating-controls {
+    left: 0;
+    transform: none;
+    bottom: 0;
+    width: 100%;
+    padding: 6px;
+    height: 10vh;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    justify-items: center;
+    align-items: center;
+    background: transparent;
+    z-index: 12000;
+    pointer-events: auto;
+  }
+  .floating-controls button {
+    width: 90%;
+    height: 80%;
+    border-radius: 9999px;
+    padding: 0 6px;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .floating-controls button.try-again.big { font-size: 16px; }
+
+  /* ensure progress pill and labels fit on one line */
+  .progress-pill { margin-bottom: 6px; }
+  .progress-cubes { gap: 4px; }
+}
+
+/* ...existing code... */

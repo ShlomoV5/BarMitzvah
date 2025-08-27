@@ -31,31 +31,38 @@
       </div>
     </div>
 
-    <!-- Left menu -->
-    <aside class="left-menu">
-      <div class="menu-title">Aliyot Menu</div>
-      <button class="menu-btn active" data-aliyah="rishon">ראשון</button>
-      <button class="menu-btn" disabled>שני</button>
-      <button class="menu-btn" disabled>שלישי</button>
-      <button class="menu-btn" disabled>רביעי</button>
-      <button class="menu-btn" disabled>חמישי</button>
-      <button class="menu-btn" disabled>שישי</button>
-      <button class="menu-btn" disabled>שביעי</button>
-      <button class="menu-btn" disabled>הפטרה</button>
+  <!-- Left menu -->
+  <aside class="left-menu" id="leftMenu" aria-hidden="true">
+      <div class="menu-handle" id="leftMenuHandle" title="Aliyot menu">
+        <div class="menu-title">Aliyot Menu</div>
+      </div>
+      <div class="menu-body">
+        <button class="menu-btn active" data-aliyah="rishon">ראשון</button>
+        <button class="menu-btn" disabled>שני</button>
+        <button class="menu-btn" disabled>שלישי</button>
+        <button class="menu-btn" disabled>רביעי</button>
+        <button class="menu-btn" disabled>חמישי</button>
+        <button class="menu-btn" disabled>שישי</button>
+        <button class="menu-btn" disabled>שביעי</button>
+        <button class="menu-btn" disabled>הפטרה</button>
+      </div>
     </aside>
 
-    <!-- Floating minimal practice log (right) -->
-    <aside class="practice-log-float" id="practiceLogFloat">
-      <table>
-        <thead>
-          <tr>
-            <th title="Date">📅</th>
-            <th title="Points">⭐</th>
-            <th title="Time">⏱️</th>
-          </tr>
-        </thead>
-        <tbody id="practiceLogBody"></tbody>
-      </table>
+  <!-- Floating minimal practice log (right) -->
+  <aside class="practice-log-float" id="practiceLogFloat" aria-hidden="true">
+      <div class="log-handle" id="practiceLogHandle" title="Practice log">Log</div>
+      <div class="log-body">
+        <table>
+          <thead>
+            <tr>
+              <th title="Date">📅</th>
+              <th title="Points">⭐</th>
+              <th title="Time">⏱️</th>
+            </tr>
+          </thead>
+          <tbody id="practiceLogBody"></tbody>
+        </table>
+      </div>
     </aside>
 
     <div class="container">

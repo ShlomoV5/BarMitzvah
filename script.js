@@ -28,6 +28,47 @@
   const endAliyahControls = document.getElementById("endAliyahControls");
   const tryAgainAliyahBtn = document.getElementById("tryAgainAliyah");
   const leftMenu = document.querySelector(".left-menu");
+  const practiceLogFloat = document.getElementById("practiceLogFloat");
+  const practiceLogHandle = document.getElementById("practiceLogHandle");
+  const leftMenuHandle = document.getElementById("leftMenuHandle");
+
+  // Ensure expandables start closed by default
+  if (leftMenu) {
+    leftMenu.classList.remove("expanded");
+    leftMenu.setAttribute("aria-hidden", "true");
+  }
+  if (practiceLogFloat) {
+    practiceLogFloat.classList.remove("expanded");
+    practiceLogFloat.setAttribute("aria-hidden", "true");
+  }
+
+  // Left menu toggle (mobile): toggle .expanded on the aside
+  if (leftMenuHandle && leftMenu) {
+    leftMenuHandle.addEventListener("click", (e) => {
+      const isExpanded = leftMenu.classList.contains("expanded");
+      if (isExpanded) {
+        leftMenu.classList.remove("expanded");
+        leftMenu.setAttribute("aria-hidden", "true");
+      } else {
+        leftMenu.classList.add("expanded");
+        leftMenu.setAttribute("aria-hidden", "false");
+      }
+    });
+  }
+
+  // Practice log toggle (mobile)
+  if (practiceLogHandle && practiceLogFloat) {
+    practiceLogHandle.addEventListener("click", () => {
+      const isExpanded = practiceLogFloat.classList.contains("expanded");
+      if (isExpanded) {
+        practiceLogFloat.classList.remove("expanded");
+        practiceLogFloat.setAttribute("aria-hidden", "true");
+      } else {
+        practiceLogFloat.classList.add("expanded");
+        practiceLogFloat.setAttribute("aria-hidden", "false");
+      }
+    });
+  }
 
   // State
   let aliyahKey = null; // e.g., "rishon"
