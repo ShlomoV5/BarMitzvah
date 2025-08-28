@@ -17,417 +17,137 @@
   --muted: #6b7280;
 }
 * {
-  box-sizing: border-box;
-}
-html,
-body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-}
-body {
-  font-family: "Heebo", sans-serif;
-  color: var(--ink);
-  background: radial-gradient(1200px 600px at 70% -10%, var(--bg2), transparent),
-    radial-gradient(1400px 800px at -10% 20%, var(--bg1), transparent),
-    linear-gradient(to right, #e0eafc, #cfdef3);
-}
+  /* Streamlined responsive stylesheet
+     - Desktop (>=701px): menus are expanded by default and visible, pasuk capped at 25px
+     - Mobile (<=700px): menus collapse to vertical handles and reveal with .expanded
+  */
 
-/* Blur the app while loading */
-html.loading .container,
-html.loading .left-menu,
-html.loading .practice-log-float {
-  filter: blur(6px) saturate(0.9);
-  pointer-events: none;
-  user-select: none;
-}
-
-/* Splash */
-#splash {
-  position: fixed;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  background: rgba(255, 255, 255, 0.55);
-  backdrop-filter: blur(6px) saturate(1.2);
-  z-index: 9999;
-  transition: opacity 0.25s, visibility 0.25s;
-}
-#splash.hidden {
-  opacity: 0;
-  visibility: hidden;
-}
-.splash-card {
-  background: linear-gradient(160deg, #fff, #f3f6ff);
-  border: 1px solid #eef2ff;
-  border-radius: 16px;
-  padding: 20px 24px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-  text-align: center;
-}
-.spinner {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  border: 4px solid #e5e7eb;
-  border-top-color: var(--accent);
-  animation: spin 1s linear infinite;
-  margin: 0 auto 10px;
-}
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
+  @font-face{font-family:TaameyFrankCLM;src:url('/TaameyFrankCLM.woff2') format('woff2');font-display:swap}
+  :root{
+    --bg1:#e6f0ff;--bg2:#d7ecff;--pill:#ffffffcc;--ink:#1b1f27;--accent:#4f46e5;
+    --accent-2:#14b8a6;--accent-3:#f59e0b;--success:#22c55e;--info:#0ea5e9;--danger:#ef4444;
+    --card:#ffffff;--muted:#6b7280;
   }
-}
-.splash-text {
-  font-weight: 700;
-  color: #1f2937;
-}
-
-/* Left menu */
-.left-menu {
-  position: fixed;
-  top: 16px;
-  left: 16px;
-  width: 160px;
-  background: linear-gradient(160deg, #fff, #f3f6ff);
-  border-radius: 16px;
-  padding: 12px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
-  border: 1px solid #eef2ff;
-}
-.menu-title {
-  font-weight: 700;
-  margin-bottom: 8px;
-  text-align: center;
-  color: var(--accent);
-}
-.menu-btn {
-  width: 100%;
-  padding: 8px 10px;
-  margin: 6px 0;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  background: #eef2ff;
-  color: #334155;
-  transition: transform 0.15s, box-shadow 0.15s, background 0.2s;
-  font-weight: 600;
-}
-.menu-btn.active {
-  background: linear-gradient(135deg, var(--accent), #7c3aed);
-  color: #fff;
-  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.35);
-}
-.menu-btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-
-/* Floating minimal log */
-.practice-log-float {
-  position: fixed;
-  top: 16px;
-  right: 16px;
-  width: 280px;
-  background: linear-gradient(160deg, #fff, #f4fffe);
-  border-radius: 16px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
-  border: 1px solid #e6fffb;
-  overflow: hidden;
-}
-.practice-log-float table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
-}
-.practice-log-float th,
-.practice-log-float td {
-  padding: 10px 12px;
-  text-align: center;
-  border-bottom: 1px dashed #e5e7eb;
-}
-.practice-log-float thead {
-  background: linear-gradient(135deg, var(--accent-2), #06b6d4);
-  color: white;
-}
-.practice-log-float tbody tr:nth-child(even) {
-  background: #f8fafc;
-}
-
-/* Main card */
-.container {
-  background: linear-gradient(180deg, #fff, #f9fbff);
-  max-width: 800px;
-  margin: 80px auto;
-  padding: 28px;
-  border-radius: 20px;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.08);
-  border: 1px solid #eef2ff;
-}
-h1 {
-  margin-top: 12px;
-  text-align: center;
-  letter-spacing: 0.5px;
-  color: #0f172a;
-}
-
-/* Pasuk text */
-.pasuk {
-  font-family: "TaameyFrankCLM", serif;
-  font-size: 32px;
-  font-weight: 500;
-  margin: 18px 0;
-  direction: rtl;
-  line-height: 1.7;
-  color: #0b1b30;
-  background: linear-gradient(135deg, #fff, #f0f9ff);
-  border: 1px solid #e2e8f0;
-  border-radius: 16px;
-  padding: 18px;
-}
-
-/* Progress pill */
-.progress-pill {
-  background: var(--pill);
-  backdrop-filter: saturate(1.3) blur(6px);
-  border: 1px solid #e2e8f0;
-  border-radius: 999px;
-  padding: 10px 14px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06) inset,
-    0 6px 18px rgba(0, 0, 0, 0.05);
-}
-.progress-cubes {
-  display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  gap: 6px;
-}
-.progress-block {
-  height: 18px;
-  border-radius: 10px;
-  background: #e5e7eb;
-  border: 1px solid #e2e8f0;
-  position: relative;
-  overflow: hidden;
-}
-.progress-block .fill {
-  position: absolute;
-  inset: 0;
-  width: 0%;
-  height: 100%;
-  transition: width 0.35s ease, background 0.35s ease, box-shadow 0.35s ease;
-  border-radius: inherit;
-}
-.progress-block.current {
-  outline: 2px solid #0ea5e9;
-  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15);
-}
-.progress-block .current-label {
-  position: absolute;
-  right: 6px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 11px;
-  font-weight: 700;
-  color: #0f172a;
-  background: #ffffffd9;
-  padding: 2px 6px;
-  border-radius: 999px;
-  border: 1px solid #e2e8f0;
-}
-
-/* color tiers */
-.pb-gray .fill {
-  background: #e5e7eb;
-  box-shadow: none;
-}
-/* Yellow (recent not strong enough) */
-.pb-yellow .fill {
-  background: linear-gradient(90deg, #fde68a, #fbbf24);
-  box-shadow: 0 0 0 1px #fcd34d inset;
-}
-/* Green (last 3 = did well) */
-.pb-green .fill {
-  background: linear-gradient(90deg, #16a34a, #22c55e);
-  box-shadow: 0 0 0 1px #4ade80 inset;
-}
-
-/* Buttons */
-.buttons {
-  margin: 20px 0;
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-button {
-  font-family: "Heebo", sans-serif;
-  font-size: 18px;
-  padding: 10px 18px;
-  cursor: pointer;
-  border: none;
-  border-radius: 10px;
-  color: white;
-  transition: transform 0.15s, box-shadow 0.15s, opacity 0.2s;
-}
-button:hover {
-  transform: translateY(-2px);
-}
-#didWell {
-  background: linear-gradient(135deg, var(--success), #10b981);
-  box-shadow: 0 6px 14px rgba(34, 197, 94, 0.35);
-}
-#needPractice {
-  background: linear-gradient(135deg, var(--info), #3b82f6);
-  box-shadow: 0 6px 14px rgba(14, 165, 233, 0.35);
-}
-.try-again {
-  background: linear-gradient(135deg, var(--accent-3), #fb7185);
-  box-shadow: 0 6px 14px rgba(245, 158, 11, 0.28);
-}
-.try-again.big {
-  font-size: 20px;
-  padding: 12px 20px;
-}
-
-/* Floating controls anchored bottom-center */
-.floating-controls {
-  position: fixed;
-  left: 50%;
-  bottom: 16px;
-  transform: translateX(-50%);
-  z-index: 10000;
-  background: #0f172a1a;
-  backdrop-filter: blur(4px);
-  padding: 8px 10px;
-  border-radius: 12px;
-}
-
-/* Floating points at top (hovering, not covering content) */
-.points {
-  position: fixed;
-  top: 8px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 12000;
-  background: linear-gradient(135deg, #fff, #f3f6ff);
-  border-radius: 999px;
-  padding: 8px 14px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
-  font-size: 16px;
-}
-
-/* Left menu / right practice log handles and responsive behavior */
-.left-menu,
-.practice-log-float {
-  transition: width 0.22s ease, transform 0.22s ease;
-  z-index: 11000;
-}
-
-/* menu handle (vertical label) */
-.left-menu .menu-handle,
-.practice-log-float .log-handle {
-  display: none;
-}
-
-/* Mobile-specific layout: no page scroll, compact container, toggles */
-@media (max-width: 700px) {
-  html, body {
-    height: 100vh;
-    overflow: hidden; /* no page scrolling */
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0}
+  body{font-family:Heebo,system-ui,-apple-system,'Segoe UI',Roboto,Arial; color:var(--ink);
+    background:radial-gradient(1200px 600px at 70% -10%,var(--bg2),transparent),
+              radial-gradient(1400px 800px at -10% 20%,var(--bg1),transparent),
+              linear-gradient(to right,#e0eafc,#cfdef3);
   }
 
-  /* Make container fill available area between top points and bottom controls */
-  .container {
-    max-width: none;
-    margin: 56px 8px 10vh; /* top reserved space for .points, bottom reserved for controls */
-    padding: 14px;
-    height: calc(100vh - 10vh - 64px); /* 10vh bottom controls, 64px top points+gaps */
-    overflow: hidden;
+  /* Splash blur while loading */
+  html.loading .container, html.loading .left-menu, html.loading .practice-log-float{filter:blur(6px) saturate(.9);pointer-events:none}
+
+  /* Layout */
+  .container{max-width:800px;margin:80px auto;padding:28px;border-radius:20px;background:linear-gradient(180deg,#fff,#f9fbff);box-shadow:0 16px 40px rgba(0,0,0,.08);border:1px solid #eef2ff}
+  h1{text-align:center;margin-top:12px}
+
+  /* Pasuk text: base size and desktop cap */
+  .pasuk{font-family:TaameyFrankCLM,serif;font-size:20px;line-height:1.6;font-weight:500;direction:rtl;color:#0b1b30;background:linear-gradient(135deg,#fff,#f0f9ff);border:1px solid #e2e8f0;border-radius:16px;padding:18px;overflow:hidden}
+
+  /* Points floating (kept behind expanded menus) */
+  .points{position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:900;background:linear-gradient(135deg,#fff,#f3f6ff);border-radius:999px;padding:8px 14px;box-shadow:0 8px 20px rgba(0,0,0,.08);font-size:16px}
+
+  /* Left menu & practice log base (desktop first) */
+  .left-menu{position:fixed;top:16px;left:16px;width:160px;background:linear-gradient(160deg,#fff,#f3f6ff);border-radius:16px;padding:12px;box-shadow:0 10px 25px rgba(0,0,0,.08);border:1px solid #eef2ff;z-index:11000}
+  .practice-log-float{position:fixed;top:16px;right:16px;width:280px;background:linear-gradient(160deg,#fff,#f4fffe);border-radius:16px;padding:12px;box-shadow:0 10px 25px rgba(0,0,0,.08);border:1px solid #e6fffb;z-index:11000}
+  .menu-title{font-weight:700;margin-bottom:8px;color:var(--accent);text-align:center}
+  .menu-btn{display:block;width:100%;padding:8px 10px;margin:6px 0;border-radius:10px;border:none;background:#eef2ff;color:#334155;cursor:pointer;font-weight:600}
+  .menu-btn.active{background:linear-gradient(135deg,var(--accent),#7c3aed);color:#fff;box-shadow:0 6px 16px rgba(79,70,229,.35)}
+
+  /* close X (hidden by default, shown when expanded or on desktop) */
+  .menu-close,.log-close{display:none;position:absolute;font-size:14px;color:#475569}
+  .left-menu .menu-close{top:8px;right:10px}
+  .practice-log-float .log-close{top:8px;left:10px}
+
+  /* progress */
+  .progress-wrap{display:flex;flex-direction:column;gap:8px;align-items:center}
+  .progress-pill{background:var(--pill);backdrop-filter:saturate(1.3) blur(6px);border:1px solid #e2e8f0;border-radius:999px;padding:10px 14px;width:100%;max-width:760px;box-shadow:inset 0 8px 20px rgba(0,0,0,.06)}
+  .progress-cubes{display:flex;gap:6px;width:100%;align-items:center}
+  .progress-block{flex:1 1 0;min-width:8px;height:14px;border-radius:6px;background:#e5e7eb;border:1px solid #e2e8f0;position:relative;overflow:hidden}
+  .progress-block .fill{position:absolute;inset:0;width:0;height:100%;transition:width .35s ease;background:#e5e7eb;border-radius:inherit}
+  /* color tiers for progress fills (script toggles pb-gray/pb-yellow/pb-green on the block) */
+  .progress-block.pb-gray .fill { background: #e5e7eb }
+  .progress-block.pb-yellow .fill { background: linear-gradient(135deg, var(--accent-3), #fbbf24) }
+  .progress-block.pb-green .fill { background: linear-gradient(135deg, var(--success), #16a34a) }
+  .progress-block.current{outline:2px solid rgba(14,165,233,.6);box-shadow:none}
+
+  .progress-arrows{display:flex;gap:12px}
+  .progress-arrows .arrow{border:none;padding:8px 12px;border-radius:8px;color:#fff;font-size:18px;min-width:44px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+  /* unify arrow colors so both arrows are visually consistent */
+  .progress-arrows .arrow.left,.progress-arrows .arrow.right{background:linear-gradient(135deg,var(--accent),#7c3aed)}
+  .progress-arrows .arrow:disabled{opacity:.35;cursor:not-allowed}
+
+  /* Player */
+  .player{display:flex;gap:10px;align-items:center;justify-content:center;margin:10px 0}
+  .player-btn{width:44px;height:44px;border-radius:50%;border:none;color:#fff;font-size:16px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+  .player-btn.play{background:linear-gradient(135deg,#06b6d4,#3b82f6)}
+  .player-btn.stop{background:linear-gradient(135deg,#ef4444,#f97316)}
+  /* make pause button colorful as well (was appearing grey) */
+  .player-btn.pause{background:linear-gradient(135deg,#7c3aed,#4f46e5)}
+  .player-timeline{display:flex;flex-direction:column;width:60%;min-width:200px}
+  .player-timeline input[type=range]{width:100%}
+  .player-time{font-size:12px;color:var(--muted);text-align:center}
+
+  /* Floating bottom controls (mobile layout handled below) */
+  .floating-controls{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:1000;background:#0f172a1a;backdrop-filter:blur(4px);padding:8px 10px;border-radius:12px}
+  .floating-controls button{font-size:18px;padding:10px 18px;border-radius:10px;border:none;color:#fff}
+  .floating-controls #didWell{background:linear-gradient(135deg,var(--success),#10b981)}
+  .floating-controls #needPractice{background:linear-gradient(135deg,var(--info),#3b82f6)}
+
+  /* Small-screen adjustments: collapse menus to handles and reserve space */
+  @media (max-width:700px){
+    html,body{height:100vh;overflow:hidden}
+    .container{max-width:none;margin:56px 8px 10vh;padding:14px;height:calc(100vh - 10vh - 64px);overflow:hidden}
+    h1{font-size:18px;margin:8px 0}
+    #pasukTitle{font-size:16px}
+    .pasuk{font-size:clamp(18px,4.2vw,28px);padding:12px;margin:10px 0}
+
+    /* collapsed handles */
+    .left-menu{top:8px;left:8px;width:44px;padding:6px;border-radius:12px}
+    .practice-log-float{top:8px;right:8px;width:44px;padding:6px;border-radius:12px}
+    .left-menu .menu-body{display:none}
+    .left-menu.expanded{width:220px;padding:10px}
+    .left-menu .menu-handle{display:block;cursor:pointer;height:100%;position:relative}
+  .left-menu .menu-title{writing-mode:vertical-rl;transform:rotate(180deg);font-size:14px;padding:6px 0;color:var(--accent);font-weight:700}
+    .left-menu.expanded .menu-title{display:none}
+    .left-menu.expanded .menu-body{display:block}
+    .left-menu.expanded .menu-close{display:block;text-shadow:-1px -1px 0 white,1px -1px 0 white,-1px 1px 0 white,1px 1px 0 white}
+
+    .practice-log-float .log-handle{display:block;writing-mode:vertical-rl;transform:rotate(180deg);font-size:13px;color:var(--accent-2);cursor:pointer}
+  .practice-log-float .log-handle{font-weight:700}
+    .practice-log-float .log-body{display:none}
+    .practice-log-float.expanded{width:300px;padding:10px}
+    .practice-log-float.expanded .log-body{display:block}
+    .practice-log-float.expanded .log-handle{display:none}
+    .practice-log-float.expanded .log-close{display:block;text-shadow:-1px -1px 0 white,1px -1px 0 white,-1px 1px 0 white,1px 1px 0 white}
+
+    .floating-controls{left:0;transform:none;bottom:0;width:100%;padding:6px;height:10vh;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;justify-items:center;align-items:center}
+    .floating-controls button{width:90%;height:80%;border-radius:9999px}
   }
 
-  h1 { font-size: 18px; margin: 8px 0; }
-  #pasukTitle { font-size: 16px; }
-  .pasuk { font-size: clamp(18px, 4.2vw, 28px); padding: 12px; margin: 10px 0; }
-
-  /* Left menu collapsed/expanded behavior */
-  .left-menu {
-    top: 8px;
-    left: 8px;
-    width: 44px;
-    padding: 6px;
-    border-radius: 12px;
-    overflow: visible;
-  }
-  .left-menu.expanded { width: 220px; padding: 10px; }
-  .left-menu .menu-body { display: none; }
-  .left-menu.expanded .menu-body { display: block; }
-  .left-menu .menu-handle { display: block; cursor: pointer; height: 100%; }
-  .left-menu .menu-title {
-    writing-mode: vertical-rl;
-    transform: rotate(180deg);
-    font-weight: 700;
-    color: var(--accent);
-    font-size: 14px;
-    text-align: center;
-    padding: 6px 0;
+  /* Desktop tweaks: show close X on expanded menus and keep pasuk size capped */
+  @media (min-width:701px){
+    .menu-close,.log-close{display:block}
+    /* ensure vertical handles are hidden on desktop */
+    .left-menu .menu-handle,.practice-log-float .log-handle{display:none}
+    /* cap pasuk size to 25px on desktop */
+  .pasuk{font-size:20px;max-height:none}
+  /* allow autosize up to 30px on desktop */
+  .pasuk[data-desktop-cap] { --desktop-cap: 30px }
   }
 
-  /* Practice log collapsed/expanded */
-  .practice-log-float {
-    top: 8px;
-    right: 8px;
-    width: 44px;
-    padding: 6px;
-    border-radius: 12px;
-  }
-  .practice-log-float.expanded { width: 300px; padding: 10px; }
-  .practice-log-float .log-body { display: none; }
-  .practice-log-float.expanded .log-body { display: block; }
-  .practice-log-float .log-handle {
-    display: block;
-    writing-mode: vertical-rl;
-    transform: rotate(180deg);
-    font-weight: 700;
-    cursor: pointer;
-    text-align: center;
-    font-size: 13px;
-    color: var(--accent-2);
-  }
-  .practice-log-float table { font-size: 12px; }
+/* Aliyah label and small note */
+.aliyah-label{font-size:13px;color:var(--muted);text-align:center;margin:6px 0 0 6px;font-weight:700}
+.note{font-size:11px;color:var(--muted);text-align:center;margin-top:6px;margin-bottom:4px}
 
-  /* Floating controls: fixed bottom, 3 equal columns, round buttons */
-  .floating-controls {
-    left: 0;
-    transform: none;
-    bottom: 0;
-    width: 100%;
-    padding: 6px;
-    height: 10vh;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 6px;
-    justify-items: center;
-    align-items: center;
-    background: transparent;
-    z-index: 12000;
-    pointer-events: auto;
-  }
-  .floating-controls button {
-    width: 90%;
-    height: 80%;
-    border-radius: 9999px;
-    padding: 0 6px;
-    font-size: 14px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .floating-controls button.try-again.big { font-size: 16px; }
+/* Practice log table styling (global so it's present on desktop & mobile) */
+.practice-log-float table{width:100%;border-collapse:collapse;font-family:Heebo,system-ui,-apple-system,'Segoe UI',Roboto,Arial;margin:6px 0}
+.practice-log-float thead th{font-weight:700;font-size:12px;color:var(--muted);padding:6px 8px;text-align:left;background:rgba(255,255,255,0.6);border-radius:6px}
+.practice-log-float tbody td{padding:8px 6px;border-bottom:1px dashed rgba(0,0,0,0.04);font-size:13px}
+.practice-log-float tbody tr:last-child td{border-bottom:none}
 
-  /* ensure progress pill and labels fit on one line */
-  .progress-pill { margin-bottom: 6px; }
-  .progress-cubes { gap: 4px; }
-}
+/* Ensure Heebo is available for Hebrew UI text where appropriate */
+body, .menu-title, .menu-btn, .practice-log-float { font-family: Heebo, system-ui, -apple-system, 'Segoe UI', Roboto, Arial; }
 
-/* ...existing code... */

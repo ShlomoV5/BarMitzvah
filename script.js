@@ -25,21 +25,40 @@
   const feedbackDiv = document.getElementById("feedback");
   const practiceLogBody = document.getElementById("practiceLogBody");
   const tryAgainStepBtn = document.getElementById("tryAgainStep");
-  const endAliyahControls = document.getElementById("endAliyahControls");
-  const tryAgainAliyahBtn = document.getElementById("tryAgainAliyah");
+  // player elements
+  const playBtn = document.getElementById('playBtn');
+  const pauseBtn = document.getElementById('pauseBtn');
+  const playerSeek = document.getElementById('playerSeek');
+  const curTimeSpan = document.getElementById('curTime');
+  const durTimeSpan = document.getElementById('durTime');
+  const progressBack = document.getElementById('progressBack');
+  const progressNext = document.getElementById('progressNext');
   const leftMenu = document.querySelector(".left-menu");
   const practiceLogFloat = document.getElementById("practiceLogFloat");
   const practiceLogHandle = document.getElementById("practiceLogHandle");
   const leftMenuHandle = document.getElementById("leftMenuHandle");
+  const menuClose = document.querySelector('#leftMenu .menu-close');
+  const practiceLogClose = document.querySelector('#practiceLogFloat .log-close');
 
-  // Ensure expandables start closed by default
+  // Ensure expandables default state depends on viewport: collapsed on small screens, expanded on desktop
+  const isMobile = window.innerWidth <= 700;
   if (leftMenu) {
-    leftMenu.classList.remove("expanded");
-    leftMenu.setAttribute("aria-hidden", "true");
+    if (isMobile) {
+      leftMenu.classList.remove("expanded");
+      leftMenu.setAttribute("aria-hidden", "true");
+    } else {
+      leftMenu.classList.add("expanded");
+      leftMenu.setAttribute("aria-hidden", "false");
+    }
   }
   if (practiceLogFloat) {
-    practiceLogFloat.classList.remove("expanded");
-    practiceLogFloat.setAttribute("aria-hidden", "true");
+    if (isMobile) {
+      practiceLogFloat.classList.remove("expanded");
+      practiceLogFloat.setAttribute("aria-hidden", "true");
+    } else {
+      practiceLogFloat.classList.add("expanded");
+      practiceLogFloat.setAttribute("aria-hidden", "false");
+    }
   }
 
   // Left menu toggle (mobile): toggle .expanded on the aside
@@ -56,6 +75,15 @@
     });
   }
 
+  // Menu close (✕) — collapse when clicked
+  if (menuClose && leftMenu) {
+    menuClose.addEventListener('click', (e) => {
+      e.stopPropagation();
+      leftMenu.classList.remove('expanded');
+      leftMenu.setAttribute('aria-hidden', 'true');
+    });
+  }
+
   // Practice log toggle (mobile)
   if (practiceLogHandle && practiceLogFloat) {
     practiceLogHandle.addEventListener("click", () => {
@@ -67,6 +95,15 @@
         practiceLogFloat.classList.add("expanded");
         practiceLogFloat.setAttribute("aria-hidden", "false");
       }
+    });
+  }
+
+  // Practice log close (✕)
+  if (practiceLogClose && practiceLogFloat) {
+    practiceLogClose.addEventListener('click', (e) => {
+      e.stopPropagation();
+      practiceLogFloat.classList.remove('expanded');
+      practiceLogFloat.setAttribute('aria-hidden', 'true');
     });
   }
 
@@ -245,21 +282,27 @@
     const current = flatSteps[currentIndex];
     if (!current) return;
     const pasukBlock = blocks[current.pasukNumber - 1];
-    if (pasukBlock) {
-      pasukBlock.classList.add("current");
+    if (pasukBlock) pasukBlock.classList.add("current");
 
-      // Ensure only one label exists
-      blocks.forEach((b) => {
-        const lbl = b.querySelector(".current-label");
-        if (lbl) lbl.remove();
-      });
+    // Update arrow enable/disable
+    if (progressBack) progressBack.disabled = currentIndex === 0;
+    if (progressNext) progressNext.disabled = currentIndex >= flatSteps.length - 1;
 
-      const label = document.createElement("div");
-      label.className = "current-label";
-      const partIdx = current.partIndex + 1;
-      label.textContent = `Now ${current.pasukNumber}:${partIdx}/${current.partsCount}`;
-      pasukBlock.appendChild(label);
-    }
+    // Wire click-to-jump for blocks (one-time attach)
+    blocks.forEach((b, idx) => {
+      if (!b.dataset.bound) {
+        b.addEventListener('click', () => {
+          // jump to first step of pasuk idx+1
+          const pasukNum = idx + 1;
+          const stepIndices = getStepIndicesOfPasuk(pasukNum);
+          if (stepIndices && stepIndices.length) {
+            currentIndex = stepIndices[0];
+            renderStep(currentIndex);
+          }
+        });
+        b.dataset.bound = '1';
+      }
+    });
   }
 
   function getStepIndicesOfPasuk(pasukNumber) {
@@ -347,13 +390,86 @@
   function renderStep(index) {
     const step = flatSteps[index];
     if (!step) return;
-    titleElement.textContent = step.title;
+  titleElement.textContent = step.title;
+  // update the small header to show current chunk/step name
+  const currentLearning = document.getElementById('currentLearning');
+  if (currentLearning) currentLearning.textContent = `Currently learning: ${step.title}`;
+  // show aliyah label (static for now)
+  const aliyahLabelEl = document.getElementById('aliyahLabel');
+  if (aliyahLabelEl) aliyahLabelEl.textContent = `Aliyah: ראשון`;
     pasukTextElement.textContent = step.text;
     audioSourceElement.src = step.audio;
     audioElement.load();
     showFeedback("", "");
-    endAliyahControls.hidden = true;
+  // end-of-aliyah UI removed; nothing to show here
     redrawProgressBar();
+    // Auto-size the pasuk to fill available vertical space
+    requestAnimationFrame(autoSizePasuk);
+  }
+
+  // Auto-size algorithm: binary search the largest font-size (px) that keeps
+  // the pasuk's scrollHeight within the available space left in .container.
+  function autoSizePasuk() {
+    if (!pasukTextElement) return;
+    const container = document.querySelector('.container');
+    if (!container) return;
+
+    // Reset to a reasonable starting point so measurements start fresh
+  const MIN = 12;
+  const MAX = (window.innerWidth > 700) ? 30 : 160; // cap at 30px on desktop
+
+    // Compute the vertical space used by siblings (everything in container except pasuk)
+    const siblings = Array.from(container.children).filter(c => c !== pasukTextElement);
+    let siblingsHeight = 0;
+    siblings.forEach((s) => {
+      // Use offsetHeight which is reliable for visible elements
+      siblingsHeight += s.offsetHeight || 0;
+    });
+
+    // reserve a small gap
+    const reserved = 8; // px
+    const available = Math.max(40, container.clientHeight - siblingsHeight - reserved);
+
+    // Binary search for best font size
+    let low = MIN, high = MAX, best = MIN;
+    // ensure word-wrapping is normal for accurate height
+    pasukTextElement.style.whiteSpace = 'normal';
+    pasukTextElement.style.overflow = 'visible';
+
+    while (low <= high) {
+      const mid = Math.floor((low + high) / 2);
+      pasukTextElement.style.fontSize = mid + 'px';
+      // force layout
+      const needed = pasukTextElement.scrollHeight;
+      if (needed <= available) {
+        best = mid;
+        low = mid + 1;
+      } else {
+        high = mid - 1;
+      }
+    }
+
+    pasukTextElement.style.fontSize = best + 'px';
+    // Keep overflow hidden so there is no internal scroll
+    pasukTextElement.style.overflow = 'hidden';
+  }
+
+  // Re-run autosize on resizes and when container layout changes
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => requestAnimationFrame(autoSizePasuk), 120);
+  });
+
+  // Observe container size changes (for dynamic UI on mobile toggles)
+  try {
+    const containerEl = document.querySelector('.container');
+    if (containerEl && window.ResizeObserver) {
+      const ro = new ResizeObserver(() => requestAnimationFrame(autoSizePasuk));
+      ro.observe(containerEl);
+    }
+  } catch (e) {
+    // ignore if ResizeObserver not available
   }
 
   function showFeedback(msg, type) {
@@ -420,7 +536,7 @@
       renderStep(currentIndex);
     } else {
       showFeedback("You finished this Aliyah.", "success");
-      endAliyahControls.hidden = false;
+      // confetti remains
       confetti({ particleCount: 220, spread: 100, origin: { y: 0.6 } });
     }
   });
@@ -439,20 +555,65 @@
     );
   });
 
-  tryAgainStepBtn.addEventListener("click", function () {
-    sessionAttemptsPerIndex[currentIndex] = 0; // allow fresh scoring for daily points
-    audioElement.currentTime = 0;
-    audioElement.play().catch(() => {});
-    showFeedback("Repeating this part.", "");
+  if (tryAgainStepBtn) {
+    tryAgainStepBtn.addEventListener("click", function () {
+      sessionAttemptsPerIndex[currentIndex] = 0; // allow fresh scoring for daily points
+      audioElement.currentTime = 0;
+      audioElement.play().catch(() => {});
+      showFeedback("Repeating this part.", "");
+    });
+  }
+
+  // end-of-aliyah UI removed from markup; nothing to remove here
+
+  // Player wiring
+  if (playBtn && audioElement) {
+    playBtn.addEventListener('click', () => {
+      audioElement.play().catch(()=>{});
+    });
+  }
+  if (pauseBtn && audioElement) {
+    pauseBtn.addEventListener('click', () => {
+      audioElement.pause();
+    });
+  }
+  if (playerSeek && audioElement) {
+    playerSeek.addEventListener('input', () => {
+      const pct = playerSeek.value / 100;
+      if (audioElement.duration) audioElement.currentTime = pct * audioElement.duration;
+    });
+  }
+  // Sync timeline
+  audioElement.addEventListener('timeupdate', () => {
+    if (audioElement.duration && playerSeek) {
+      const pct = (audioElement.currentTime / audioElement.duration) * 100;
+      playerSeek.value = pct;
+      if (curTimeSpan) curTimeSpan.textContent = formatTime(audioElement.currentTime);
+      if (durTimeSpan) durTimeSpan.textContent = formatTime(audioElement.duration);
+    }
+  });
+  audioElement.addEventListener('loadedmetadata', () => {
+    if (durTimeSpan) durTimeSpan.textContent = formatTime(audioElement.duration || 0);
   });
 
-  tryAgainAliyahBtn.addEventListener("click", function () {
-    sessionAttemptsPerIndex = new Array(flatSteps.length).fill(0);
-    currentIndex = 0;
-    endAliyahControls.hidden = true;
-    showFeedback("The Aliyah has restarted.", "");
-    renderStep(currentIndex);
-  });
+  function formatTime(secs) {
+    if (!secs || isNaN(secs)) return '0:00';
+    const s = Math.floor(secs % 60).toString().padStart(2,'0');
+    const m = Math.floor(secs / 60);
+    return `${m}:${s}`;
+  }
+
+  // Progress arrows
+  if (progressBack) {
+    progressBack.addEventListener('click', () => {
+      if (currentIndex > 0) { currentIndex--; renderStep(currentIndex); }
+    });
+  }
+  if (progressNext) {
+    progressNext.addEventListener('click', () => {
+      if (currentIndex < flatSteps.length - 1) { currentIndex++; renderStep(currentIndex); }
+    });
+  }
 
   /** ========== MENU HANDLING (Aliyah selection) ========== */
   if (leftMenu) {

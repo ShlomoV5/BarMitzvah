@@ -31,10 +31,11 @@
       </div>
     </div>
 
-  <!-- Left menu -->
-  <aside class="left-menu" id="leftMenu" aria-hidden="true">
+    <!-- Left menu -->
+    <aside class="left-menu" id="leftMenu" aria-hidden="true">
       <div class="menu-handle" id="leftMenuHandle" title="Aliyot menu">
         <div class="menu-title">Aliyot Menu</div>
+        <div class="menu-close" aria-hidden="true">✕</div>
       </div>
       <div class="menu-body">
         <button class="menu-btn active" data-aliyah="rishon">ראשון</button>
@@ -48,9 +49,10 @@
       </div>
     </aside>
 
-  <!-- Floating minimal practice log (right) -->
-  <aside class="practice-log-float" id="practiceLogFloat" aria-hidden="true">
+    <!-- Floating minimal practice log (right) -->
+    <aside class="practice-log-float" id="practiceLogFloat" aria-hidden="true">
       <div class="log-handle" id="practiceLogHandle" title="Practice log">Log</div>
+      <div class="log-close" aria-hidden="true">✕</div>
       <div class="log-body">
         <table>
           <thead>
@@ -66,40 +68,52 @@
     </aside>
 
     <div class="container">
-      <!-- Progress pill -->
-      <div class="progress-pill">
-        <div id="progressBar" class="progress-cubes"></div>
+  <!-- Aliyah label -->
+  <div class="aliyah-label" id="aliyahLabel">Aliyah: ראשון</div>
+
+  <!-- Progress pill + arrows -->
+      <div class="progress-wrap">
+        <div class="progress-pill">
+          <div id="progressBar" class="progress-cubes"></div>
+        </div>
+        <div class="progress-arrows">
+          <button id="progressBack" class="arrow left" aria-label="Previous">◀</button>
+          <button id="progressNext" class="arrow right" aria-label="Next">▶</button>
+        </div>
       </div>
 
-      <h1>Bar Mitzvah Practice</h1>
-      <h2 id="pasukTitle"></h2>
+  <h1 id="currentLearning">Currently learning:</h1>
+  <div class="note">Always prefer reading from the BOOK when possible!</div>
+  <h2 id="pasukTitle"></h2>
 
       <div class="pasuk" id="pasukText"></div>
 
-      <audio id="pasukAudio" controls>
+      <!-- Hidden audio element; custom player UI below -->
+      <audio id="pasukAudio" preload="metadata" style="display:none;">
         <source id="audioSource" src="" type="audio/mpeg" />
-        Your browser does not support the audio element.
       </audio>
+
+      <div class="player" id="player">
+        <button id="playBtn" class="player-btn play" aria-label="Play">▶</button>
+        <button id="pauseBtn" class="player-btn pause" aria-label="Pause">❚❚</button>
+        <div class="player-timeline">
+          <input id="playerSeek" type="range" min="0" max="100" value="0" />
+          <div class="player-time"><span id="curTime">0:00</span> / <span id="durTime">0:00</span></div>
+        </div>
+      </div>
 
       <!-- Floating, anchored controls -->
       <div class="buttons floating-controls">
         <button id="didWell">I did well</button>
         <button id="needPractice">Needs Practice</button>
-        <button id="tryAgainStep" class="try-again" title="Try Again">
-          ↻ Start Over
-        </button>
+  <!-- start-over button removed per request -->
       </div>
 
       <div id="feedback" class="feedback"></div>
 
       <div class="points">Points for today: <span id="points">0</span></div>
 
-      <div id="endAliyahControls" class="end-aliyah-controls" hidden>
-        <div class="end-msg">Aliyah finished!🎉</div>
-        <button id="tryAgainAliyah" class="try-again big">
-          ↻ Try Aliyah Over
-        </button>
-      </div>
+  <!-- end-of-aliyah UI removed per UX simplification -->
     </div>
 
     <!-- Main controller uses dynamic import for aliyot -->
