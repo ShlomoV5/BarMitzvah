@@ -46,6 +46,16 @@
   /* Pasuk text: base size and desktop cap */
   .pasuk{font-family:TaameyFrankCLM,serif;font-size:20px;line-height:1.6;font-weight:500;direction:rtl;color:#0b1b30;background:linear-gradient(135deg,#fff,#f0f9ff);border:1px solid #e2e8f0;border-radius:16px;padding:18px;overflow:hidden}
 
+  .pasuk{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start}
+  .chunk{flex:0 0 auto;min-width:40px;max-width:100%;padding:8px;border-radius:12px;background:linear-gradient(180deg,#fff,#fbfeff);box-shadow:0 6px 14px rgba(8,15,25,.04)}
+  .chunk-text{font-size:inherit;line-height:1.5}
+  .chunk-controls{margin-top:6px}
+
+  /* prominent current chunk displayed above the inline chunks */
+  .current-large{background:linear-gradient(180deg,#fff,#f8feff);border:1px solid #e6f3ff;border-radius:14px;padding:18px;margin:12px 0;min-height:64px;display:flex;align-items:center;justify-content:center;text-align:center;direction:rtl}
+  .current-large{font-family:TaameyFrankCLM,serif}
+  .current-large .chunk-text{font-size:inherit;line-height:1.3;font-weight:700}
+
   /* Points floating (kept behind expanded menus) */
   .points{position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:900;background:linear-gradient(135deg,#fff,#f3f6ff);border-radius:999px;padding:8px 14px;box-shadow:0 8px 20px rgba(0,0,0,.08);font-size:16px}
 
@@ -87,8 +97,21 @@
   /* make pause button colorful as well (was appearing grey) */
   .player-btn.pause{background:linear-gradient(135deg,#7c3aed,#4f46e5)}
   .player-timeline{display:flex;flex-direction:column;width:60%;min-width:200px}
+.progress-block{position:relative}
+.progress-label{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:11px;color:#0b1b30;pointer-events:none;font-weight:700}
   .player-timeline input[type=range]{width:100%}
   .player-time{font-size:12px;color:var(--muted);text-align:center}
+
+/* Per-chunk controls rendered inside the pasuk area */
+.chunk-controls{display:flex;gap:10px;align-items:center;margin-top:8px}
+.chunk-play{width:44px;height:44px;border-radius:50%;border:none;background:linear-gradient(135deg,var(--accent-2),#06b6d4);color:#fff;font-size:18px;display:inline-flex;align-items:center;justify-content:center}
+.read-btn{width:56px;height:56px;border-radius:50%;border:none;background:linear-gradient(135deg,var(--success),#10b981);color:#fff;font-weight:700;font-size:14px;display:inline-flex;align-items:center;justify-content:center}
+
+/* chunk sizing: previous chunks shrink so new/current chunk can be larger and fit */
+.chunk{transition:transform .18s ease,font-size .18s ease,opacity .18s ease}
+.chunk-prev{transform:scale(.86);opacity:.9}
+.chunk-current{transform:scale(1);opacity:1}
+.chunk-text{white-space:pre-wrap}
 
   /* Floating bottom controls (mobile layout handled below) */
   .floating-controls{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:1000;background:#0f172a1a;backdrop-filter:blur(4px);padding:8px 10px;border-radius:12px}
@@ -102,7 +125,8 @@
     .container{max-width:none;margin:56px 8px 10vh;padding:14px;height:calc(100vh - 10vh - 64px);overflow:hidden}
     h1{font-size:18px;margin:8px 0}
     #pasukTitle{font-size:16px}
-    .pasuk{font-size:clamp(18px,4.2vw,28px);padding:12px;margin:10px 0}
+  .pasuk{font-size:clamp(16px,4.2vw,24px);padding:12px;margin:10px 0}
+  .chunk-text{font-size:16px}
 
     /* collapsed handles */
     .left-menu{top:8px;left:8px;width:44px;padding:6px;border-radius:12px}

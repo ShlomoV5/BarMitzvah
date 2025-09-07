@@ -46,6 +46,8 @@
         <button class="menu-btn" disabled>שישי</button>
         <button class="menu-btn" disabled>שביעי</button>
         <button class="menu-btn" disabled>הפטרה</button>
+        <hr>
+        <button class="menu-btn" data-aliyah="teamim">טעמים</button>
       </div>
     </aside>
 
@@ -82,25 +84,16 @@
         </div>
       </div>
 
-  <h1 id="currentLearning">Currently learning:</h1>
-  <div class="note">Always prefer reading from the BOOK when possible!</div>
   <h2 id="pasukTitle"></h2>
+  <!-- Large preview of the current chunk (also shown before the inline chunks) -->
+  <div id="currentLarge" class="current-large" aria-hidden="true"></div>
 
       <div class="pasuk" id="pasukText"></div>
 
-      <!-- Hidden audio element; custom player UI below -->
+      <!-- Per-chunk play controls are used; global player removed -->
       <audio id="pasukAudio" preload="metadata" style="display:none;">
         <source id="audioSource" src="" type="audio/mpeg" />
       </audio>
-
-      <div class="player" id="player">
-        <button id="playBtn" class="player-btn play" aria-label="Play">▶</button>
-        <button id="pauseBtn" class="player-btn pause" aria-label="Pause">❚❚</button>
-        <div class="player-timeline">
-          <input id="playerSeek" type="range" min="0" max="100" value="0" />
-          <div class="player-time"><span id="curTime">0:00</span> / <span id="durTime">0:00</span></div>
-        </div>
-      </div>
 
       <!-- Floating, anchored controls -->
       <div class="buttons floating-controls">
@@ -116,7 +109,9 @@
   <!-- end-of-aliyah UI removed per UX simplification -->
     </div>
 
-    <!-- Main controller uses dynamic import for aliyot -->
-    <script type="module" src="script.js"></script>
+  <!-- Data file for te'amim (must load before main controller) -->
+  <script src="teamim.js"></script>
+  <!-- Main controller uses dynamic import for aliyot -->
+  <script type="module" src="script.js"></script>
   </body>
 </html>

@@ -26,9 +26,7 @@
   const practiceLogBody = document.getElementById("practiceLogBody");
   const tryAgainStepBtn = document.getElementById("tryAgainStep");
   // player elements
-  const playBtn = document.getElementById('playBtn');
-  const pauseBtn = document.getElementById('pauseBtn');
-  const playerSeek = document.getElementById('playerSeek');
+  // per-chunk playback uses the shared audio element (#pasukAudio)
   const curTimeSpan = document.getElementById('curTime');
   const durTimeSpan = document.getElementById('durTime');
   const progressBack = document.getElementById('progressBack');
@@ -113,6 +111,8 @@
   let flatSteps = []; // flattened steps for simple navigation
   let totalPesukim = 0;
   let currentIndex = 0;
+  let readCounters = []; // per-step read counts (0..10)
+  let playingChunkIndex = null;
 
   // Persistent stores (scoped by aliyahKey)
   let sessionAttemptsPerIndex = []; // per-step attempts (session only)
@@ -133,17 +133,49 @@
 
   /** ========== DATA LOADING ========== */
   async function loadAliyah(key) {
-    aliyahKey = key; // e.g., "rishon"
-    if (key === "rishon") {
-      // Dynamic import to load only when "on it"
-      const mod = await import("./aliyah1.js");
-      pasukSets = mod.default;
-    } else {
-      // Future: different aliyot can be added similarly
-      pasukSets = [];
-    }
+    // Special handling for teamim: teamim.js exports an array of taamim each with 10 examples.
+    // We build pasukSets so each taam becomes one pasuk with two steps: intro + practice (3 random examples).
+    if (key === 'teamim') {
+      const mod = await import('./teamim.js');
+      const taamim = mod.default || [];
+      pasukSets = taamim.map((t, idx) => {
+        // pick 2-3 random examples from t.examples
+        const examples = (t.examples || []).slice();
+        const pickCount = 3
+        const picks = [];
+        for (let i = 0; i < pickCount && examples.length; i++) {
+          const j = Math.floor(Math.random() * examples.length);
+          picks.push(examples.splice(j, 1)[0]);
+        }
 
-    totalPesukim = pasukSets.length;
+        // practice text concatenates chosen examples (placeholders)
+        const practiceText = picks.map((p) => p.text).join('\n');
+
+        return {
+          pasukNumber: idx + 1,
+          steps: [
+            {
+              title: `Taam name and shape`,
+              text: t.label,
+              audio: t.audio,
+              isFullPasuk: false,
+            },
+            {
+              title: `${t.label} — Practice`,
+              text: practiceText,
+              audio: null,
+              isFullPasuk: true,
+            },
+          ],
+        };
+      });
+      totalPesukim = pasukSets.length;
+    } else {
+      const mod = await import("./" + key + ".js");
+
+      pasukSets = mod.default;
+      totalPesukim = pasukSets.length;
+    }
 
     // Flatten steps
     flatSteps = [];
@@ -157,6 +189,9 @@
         });
       });
     });
+
+  // initialize per-step read counters
+  readCounters = new Array(flatSteps.length).fill(0);
 
     // Initialize stores based on flat length
     sessionAttemptsPerIndex = new Array(flatSteps.length).fill(0);
@@ -219,9 +254,14 @@
     for (let i = 0; i < totalPesukim; i++) {
       const blk = document.createElement("div");
       blk.className = "progress-block pb-gray";
-      const fill = document.createElement("div");
-      fill.className = "fill";
-      blk.appendChild(fill);
+  const fill = document.createElement("div");
+  fill.className = "fill";
+  blk.appendChild(fill);
+  // add numeric label for pasuk number
+  const lbl = document.createElement('div');
+  lbl.className = 'progress-label';
+  lbl.textContent = (i+1).toString();
+  blk.appendChild(lbl);
       progressBarContainer.appendChild(blk);
     }
     redrawProgressBar();
@@ -391,15 +431,109 @@
     const step = flatSteps[index];
     if (!step) return;
   titleElement.textContent = step.title;
-  // update the small header to show current chunk/step name
-  const currentLearning = document.getElementById('currentLearning');
-  if (currentLearning) currentLearning.textContent = `Currently learning: ${step.title}`;
+
   // show aliyah label (static for now)
   const aliyahLabelEl = document.getElementById('aliyahLabel');
   if (aliyahLabelEl) aliyahLabelEl.textContent = `Aliyah: ראשון`;
-    pasukTextElement.textContent = step.text;
-    audioSourceElement.src = step.audio;
-    audioElement.load();
+    // Fill the prominent large preview with the current chunk
+    const currentLargeEl = document.getElementById('currentLarge');
+    if (currentLargeEl) {
+      currentLargeEl.innerHTML = '';
+      const bigText = document.createElement('div');
+      bigText.className = 'chunk-text';
+      bigText.textContent = step.text || step.pasukText || '';
+      currentLargeEl.appendChild(bigText);
+    }
+
+    // Render chunks up to the current part so they 'build up' incrementally
+  const pasukNum = step.pasukNumber;
+  const allIndices = getStepIndicesOfPasuk(pasukNum);
+  // determine how many parts of this pasuk should be visible: show parts from first up to currentIndex
+  const firstIdx = allIndices[0];
+  const upTo = Math.min(allIndices.length - 1, index - firstIdx);
+  const indices = allIndices.slice(0, upTo + 1);
+    pasukTextElement.innerHTML = '';
+
+    // container is .pasuk (already the element), we'll render chunks as children
+    indices.forEach((stepIdx, i) => {
+      const s = flatSteps[stepIdx];
+      const chunkEl = document.createElement('div');
+      // mark current part with chunk-current, others get chunk-prev if before current
+      const cls = (stepIdx === index) ? 'chunk chunk-current' : (stepIdx < index ? 'chunk chunk-prev' : 'chunk');
+      chunkEl.className = cls;
+      chunkEl.dataset.index = stepIdx;
+
+      const textDiv = document.createElement('div');
+      textDiv.className = 'chunk-text';
+      textDiv.textContent = s.text || s.pasukText || '';
+      chunkEl.appendChild(textDiv);
+
+      const controls = document.createElement('div');
+      controls.className = 'chunk-controls';
+
+  const chunkPlay = document.createElement('button');
+      chunkPlay.className = 'chunk-play';
+      chunkPlay.type = 'button';
+  chunkPlay.textContent = '▶';
+      chunkPlay.dataset.index = stepIdx;
+      controls.appendChild(chunkPlay);
+
+      const readBtn = document.createElement('button');
+      readBtn.className = 'read-btn';
+      readBtn.type = 'button';
+      readBtn.dataset.index = stepIdx;
+      readBtn.textContent = `✔ ${readCounters[stepIdx]||0}/10`;
+      controls.appendChild(readBtn);
+
+      chunkEl.appendChild(controls);
+      pasukTextElement.appendChild(chunkEl);
+
+      // Play/pause handler for this chunk's button
+      chunkPlay.addEventListener('click', () => {
+        const idx2 = Number(chunkPlay.dataset.index);
+        const s2 = flatSteps[idx2];
+        const src = s2?.audio || s2?.audioSrc || '';
+        if (!src) return;
+        // Resolve absolute URL for comparison
+        let resolved = '';
+        try { resolved = new URL(src, window.location.href).href; } catch(e) { resolved = src; }
+        // If a different src is selected, swap and play
+        if (!audioElement.currentSrc || audioElement.currentSrc !== resolved) {
+          audioSourceElement.src = src;
+          audioElement.load();
+          playingChunkIndex = idx2;
+          audioElement.play().catch(()=>{});
+          updateChunkPlayIcons();
+          return;
+        }
+        // same src: toggle play/pause (do not reload)
+        if (audioElement.paused) {
+          playingChunkIndex = idx2;
+          audioElement.play().catch(()=>{});
+        } else {
+          audioElement.pause();
+        }
+        updateChunkPlayIcons();
+      });
+
+      // Read button behavior
+      readBtn.addEventListener('click', () => {
+        const idx2 = Number(readBtn.dataset.index);
+        readCounters[idx2] = (readCounters[idx2] || 0) + 1;
+        readBtn.textContent = `✔ ${readCounters[idx2]}/10`;
+        if (readCounters[idx2] >= 10) {
+          showFeedback('Chunk completed — moving to next', 'success');
+          setTimeout(() => {
+            currentIndex = idx2 + 1;
+            if (currentIndex < flatSteps.length) renderStep(currentIndex);
+            else {
+              showFeedback('You finished this Aliyah.', 'success');
+              try { confetti({ particleCount: 120, spread: 60 }); } catch(e){}
+            }
+          }, 250);
+        }
+      });
+    });
     showFeedback("", "");
   // end-of-aliyah UI removed; nothing to show here
     redrawProgressBar();
@@ -416,7 +550,8 @@
 
     // Reset to a reasonable starting point so measurements start fresh
   const MIN = 12;
-  const MAX = (window.innerWidth > 700) ? 30 : 160; // cap at 30px on desktop
+  const MAX_PASUK = (window.innerWidth > 700) ? 30 : 80; // pasuk chunks max
+  const MAX_LARGE = (window.innerWidth > 700) ? 72 : 56; // large preview max (increased)
 
     // Compute the vertical space used by siblings (everything in container except pasuk)
     const siblings = Array.from(container.children).filter(c => c !== pasukTextElement);
@@ -432,25 +567,45 @@
 
     // Binary search for best font size
     let low = MIN, high = MAX, best = MIN;
-    // ensure word-wrapping is normal for accurate height
+    // ensure wrapping is allowed for child chunks
     pasukTextElement.style.whiteSpace = 'normal';
     pasukTextElement.style.overflow = 'visible';
 
-    while (low <= high) {
-      const mid = Math.floor((low + high) / 2);
-      pasukTextElement.style.fontSize = mid + 'px';
-      // force layout
-      const needed = pasukTextElement.scrollHeight;
-      if (needed <= available) {
-        best = mid;
-        low = mid + 1;
-      } else {
-        high = mid - 1;
+    // Size the large preview first so it is as big as possible
+    const currentLargeEl = document.getElementById('currentLarge');
+    let bestL = MIN;
+    if (currentLargeEl) {
+      let lowL = Math.max(MIN, 14), highL = MAX_LARGE; bestL = lowL;
+      currentLargeEl.style.whiteSpace = 'normal';
+      currentLargeEl.style.overflow = 'visible';
+      while (lowL <= highL) {
+        const mid = Math.floor((lowL + highL) / 2);
+        currentLargeEl.style.fontSize = mid + 'px';
+        const needed = currentLargeEl.scrollHeight;
+  if (needed <= available * 0.75) { // prefer giving large preview up to ~75% of space
+          bestL = mid; lowL = mid + 1;
+        } else { highL = mid - 1; }
       }
+      currentLargeEl.style.fontSize = bestL + 'px';
+      currentLargeEl.style.overflow = 'hidden';
     }
 
-    pasukTextElement.style.fontSize = best + 'px';
-    // Keep overflow hidden so there is no internal scroll
+    // Now size the inline pasuk area to use remaining space (bounded)
+    const reservedForLarge = currentLargeEl ? currentLargeEl.offsetHeight : 0;
+    const remaining = Math.max(40, container.clientHeight - siblingsHeight - reservedForLarge - reserved);
+    let lowP = MIN, highP = MAX_PASUK, bestP = MIN;
+    pasukTextElement.style.whiteSpace = 'normal';
+    pasukTextElement.style.overflow = 'visible';
+    while (lowP <= highP) {
+      const mid = Math.floor((lowP + highP) / 2);
+      pasukTextElement.style.fontSize = mid + 'px';
+      const needed = pasukTextElement.scrollHeight;
+      if (needed <= remaining) { bestP = mid; lowP = mid + 1; }
+      else { highP = mid - 1; }
+    }
+    // Ensure inline pasuk font-size does not exceed the large preview's font-size
+    if (currentLargeEl) bestP = Math.min(bestP, bestL);
+    pasukTextElement.style.fontSize = bestP + 'px';
     pasukTextElement.style.overflow = 'hidden';
   }
 
@@ -476,6 +631,28 @@
     feedbackDiv.textContent = msg;
     feedbackDiv.className = `feedback ${type || ""}`;
   }
+
+  // Update chunk play buttons so the currently playing chunk shows pause icon
+  function updateChunkPlayIcons() {
+    const btns = pasukTextElement.querySelectorAll('.chunk-play');
+    btns.forEach((b) => {
+      const idx = Number(b.dataset.index);
+      if (playingChunkIndex === idx && !audioElement.paused) b.textContent = '⏸';
+      else b.textContent = '▶';
+    });
+  }
+
+  // Keep icons in sync with audio element
+  audioElement.addEventListener('play', () => {
+    updateChunkPlayIcons();
+  });
+  audioElement.addEventListener('pause', () => {
+    updateChunkPlayIcons();
+  });
+  audioElement.addEventListener('ended', () => {
+    playingChunkIndex = null;
+    updateChunkPlayIcons();
+  });
 
   /** ========== SCORING & OUTCOMES ========== */
   function pointsFromAttempts(attempts) {
@@ -566,28 +743,9 @@
 
   // end-of-aliyah UI removed from markup; nothing to remove here
 
-  // Player wiring
-  if (playBtn && audioElement) {
-    playBtn.addEventListener('click', () => {
-      audioElement.play().catch(()=>{});
-    });
-  }
-  if (pauseBtn && audioElement) {
-    pauseBtn.addEventListener('click', () => {
-      audioElement.pause();
-    });
-  }
-  if (playerSeek && audioElement) {
-    playerSeek.addEventListener('input', () => {
-      const pct = playerSeek.value / 100;
-      if (audioElement.duration) audioElement.currentTime = pct * audioElement.duration;
-    });
-  }
-  // Sync timeline
+  // Sync timeline for the shared audio element (used by per-chunk players)
   audioElement.addEventListener('timeupdate', () => {
-    if (audioElement.duration && playerSeek) {
-      const pct = (audioElement.currentTime / audioElement.duration) * 100;
-      playerSeek.value = pct;
+    if (audioElement.duration) {
       if (curTimeSpan) curTimeSpan.textContent = formatTime(audioElement.currentTime);
       if (durTimeSpan) durTimeSpan.textContent = formatTime(audioElement.duration);
     }
@@ -643,4 +801,5 @@
     // Mark loaded if not already
     setLoaded();
   })();
+
 })();

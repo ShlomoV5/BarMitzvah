@@ -168,14 +168,26 @@ const aliyah1 = [
     steps: [
       {
         title: "Bereshit 28:17 - Part 1",
-        text: "וַיִּירָא֙ וַיֹּאמַ֔ר מַה־נּוֹרָ֖א הַמָּק֣וֹם הַזֶּ֑ה",
+        text: "וַיִּירָא֙ וַיֹּאמַ֔ר",
         audio: "ויצא8א.mp3",
         isFullPasuk: false,
       },
       {
         title: "Bereshit 28:17 - Part 2",
-        text: "אֵ֣ין זֶ֗ה כִּ֚י אִם־בֵּ֣ית אֱלֹהִ֔ים וְזֶ֖ה שַׁ֥עַר הַשָּׁמָֽיִם׃",
+        text: "מַה־נּוֹרָ֖א הַמָּק֣וֹם הַזֶּ֑ה",
         audio: "ויצא8ב.mp3",
+        isFullPasuk: false,
+      },
+      {
+        title: "Bereshit 28:17 - Part 3",
+        text: "אֵ֣ין זֶ֗ה כִּ֚י אִם־בֵּ֣ית אֱלֹהִ֔ים",
+        audio: "ויצא8ג.mp3",
+        isFullPasuk: false,
+      },
+      {
+        title: "Bereshit 28:17 - Part 4",
+        text: "וְזֶ֖ה שַׁ֥עַר הַשָּׁמָֽיִם׃",
+        audio: "ויצא8ד.mp3",
         isFullPasuk: false,
       },
       {
